@@ -1,12 +1,10 @@
 import time
 import requests
-from datetime import datetime
 from zoneinfo import ZoneInfo
 from math import sqrt
 
 BASE = "https://api-web.nhle.com/v1"
 TZ = ZoneInfo("America/Toronto")
-TODAY = datetime.now(TZ).strftime("%Y-%m-%d")
 
 SEASON = "20252026"
 GAME_TYPE = "2"  # regular season
@@ -117,26 +115,34 @@ def stddev(vals: list[int]) -> float:
 
 def club_shots_against_per_game(team_abbrev: str) -> float | None:
     """
-    Pull all-situations team shots against per game from club-stats endpoint.
+    Compute opponent shots against per game (all situations) from club-stats endpoint.
+    The endpoint provides raw goalie shotsAgainst totals and skater gamesPlayed.
+    We compute:
+      shotsAgainstPerGame = (sum goalies.shotsAgainst) / (max skaters.gamesPlayed)
     """
     data = get_json(f"{BASE}/club-stats/{team_abbrev}/{SEASON}/{GAME_TYPE}")
 
-    # Different API variants may name this slightly differently.
-    # Try common keys.
-    for key in ["shotsAgainstPerGame", "shotsAgainstPerGameAllSituations", "shotsAgainstPerGameTotal"]:
-        v = data.get(key)
-        if isinstance(v, (int, float)):
-            return float(v)
+    skaters = data.get("skaters", [])
+    goalies = data.get("goalies", [])
 
-    # Sometimes stats are nested
-    if isinstance(data.get("teamStats"), dict):
-        ts = data["teamStats"]
-        v = ts.get("shotsAgainstPerGame")
-        if isinstance(v, (int, float)):
-            return float(v)
+    if not isinstance(skaters, list) or not isinstance(goalies, list) or not skaters or not goalies:
+        return None
 
-    return None
+    # Team games played: use max skater games played (more stable than summing goalie appearances)
+    gp_vals = [s.get("gamesPlayed") for s in skaters if isinstance(s.get("gamesPlayed"), int)]
+    if not gp_vals:
+        return None
+    team_gp = max(gp_vals)
+    if team_gp <= 0:
+        return None
 
+    # Total shots against: sum goalie shotsAgainst
+    sa_vals = [g.get("shotsAgainst") for g in goalies if isinstance(g.get("shotsAgainst"), int)]
+    if not sa_vals:
+        return None
+    total_sa = sum(sa_vals)
+
+    return total_sa / team_gp
 
 def main():
     print(f"\nNHL Shot Parlay Board - Last 5 SOG - {TODAY}\n")
