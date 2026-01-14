@@ -1,10 +1,12 @@
 import time
 import requests
+from datetime import datetime
 from zoneinfo import ZoneInfo
 from math import sqrt
 
 BASE = "https://api-web.nhle.com/v1"
 TZ = ZoneInfo("America/Toronto")
+TODAY = datetime.now(TZ).strftime("%Y-%m-%d")
 
 SEASON = "20252026"
 GAME_TYPE = "2"  # regular season
@@ -16,7 +18,7 @@ TIMEOUT = 20
 SLEEP_BETWEEN_CALLS = 0.18
 
 # Baseline league shots against per game (all situations) used for boost
-# We keep this as a constant to avoid extra API calls and rate limits.
+# Kept constant to avoid extra API calls and rate limits.
 LEAGUE_AVG_SA = 30.0
 
 
@@ -116,9 +118,13 @@ def stddev(vals: list[int]) -> float:
 def club_shots_against_per_game(team_abbrev: str) -> float | None:
     """
     Compute opponent shots against per game (all situations) from club-stats endpoint.
-    The endpoint provides raw goalie shotsAgainst totals and skater gamesPlayed.
+
+    club-stats provides:
+      - goalies[].shotsAgainst  (raw totals)
+      - skaters[].gamesPlayed   (we use max skater GP as team games played)
+
     We compute:
-      shotsAgainstPerGame = (sum goalies.shotsAgainst) / (max skaters.gamesPlayed)
+      shotsAgainstPerGame = sum(goalies.shotsAgainst) / max(skaters.gamesPlayed)
     """
     data = get_json(f"{BASE}/club-stats/{team_abbrev}/{SEASON}/{GAME_TYPE}")
 
@@ -128,7 +134,6 @@ def club_shots_against_per_game(team_abbrev: str) -> float | None:
     if not isinstance(skaters, list) or not isinstance(goalies, list) or not skaters or not goalies:
         return None
 
-    # Team games played: use max skater games played (more stable than summing goalie appearances)
     gp_vals = [s.get("gamesPlayed") for s in skaters if isinstance(s.get("gamesPlayed"), int)]
     if not gp_vals:
         return None
@@ -136,13 +141,13 @@ def club_shots_against_per_game(team_abbrev: str) -> float | None:
     if team_gp <= 0:
         return None
 
-    # Total shots against: sum goalie shotsAgainst
     sa_vals = [g.get("shotsAgainst") for g in goalies if isinstance(g.get("shotsAgainst"), int)]
     if not sa_vals:
         return None
     total_sa = sum(sa_vals)
 
     return total_sa / team_gp
+
 
 def main():
     print(f"\nNHL Shot Parlay Board - Last 5 SOG - {TODAY}\n")
@@ -153,9 +158,7 @@ def main():
         print("No games found for today.")
         return
 
-    # Cache opponent SA values so we only call club-stats once per team
     opp_sa_cache: dict[str, float] = {}
-
     teams = sorted(matchups.keys())
 
     for team in teams:
@@ -163,17 +166,18 @@ def main():
         if not opp:
             continue
 
-        # Get opponent shots against per game
+        # Pull opponent shots against per game (cached)
         if opp not in opp_sa_cache:
             time.sleep(SLEEP_BETWEEN_CALLS)
             opp_sa = club_shots_against_per_game(opp)
-            # If we cannot fetch, fall back to baseline so boost is neutral
             opp_sa_cache[opp] = opp_sa if opp_sa is not None else LEAGUE_AVG_SA
 
         opp_sa = opp_sa_cache[opp]
         boost = opp_sa / LEAGUE_AVG_SA if LEAGUE_AVG_SA > 0 else 1.0
 
-        # Pull skaters and compute player metrics
+        if opp_sa == LEAGUE_AVG_SA:
+            print(f"(note) Opp SA fallback used for {opp}")
+
         skaters = roster_skaters(team)
 
         rows = []
@@ -191,6 +195,7 @@ def main():
 
             adj_sog = s5 * boost
 
+            # Ranking scores (parlay-friendly)
             score2 = adj_sog + 0.6 * hit2 - 0.15 * sd5
             score3 = adj_sog + 0.6 * hit3 - 0.20 * sd5
 
@@ -199,21 +204,27 @@ def main():
         forwards = [r for r in rows if r[1] == "F"]
         defense = [r for r in rows if r[1] == "D"]
 
-        forwards.sort(key=lambda x: x[9], reverse=True)  # Score2 for sorting by default
+        forwards.sort(key=lambda x: x[9], reverse=True)  # Score2
         defense.sort(key=lambda x: x[9], reverse=True)
 
         print(f"{team} vs {opp} | Opp SA: {opp_sa:.1f} | Boost: {boost:.2f}\n")
 
-        # Print top 4 forwards by Score2
         for r in forwards[:4]:
             name, pos, s5, hit2, hit3, sd5, opp_sa, boost, adj_sog, score2, score3 = r
-            print(f"  {name}  S5:{s5:.2f}  H2:{hit2:.2f}  H3:{hit3:.2f}  Adj:{adj_sog:.2f}  Sc2:{score2:.2f}  Sc3:{score3:.2f}")
+            print(
+                f"  {name}  "
+                f"S5:{s5:.2f}  H2:{hit2:.2f}  H3:{hit3:.2f}  "
+                f"Adj:{adj_sog:.2f}  Sc2:{score2:.2f}  Sc3:{score3:.2f}"
+            )
 
-        # Print top defense by Score2
         if defense:
             r = defense[0]
             name, pos, s5, hit2, hit3, sd5, opp_sa, boost, adj_sog, score2, score3 = r
-            print(f"  {name} (D)  S5:{s5:.2f}  H2:{hit2:.2f}  H3:{hit3:.2f}  Adj:{adj_sog:.2f}  Sc2:{score2:.2f}  Sc3:{score3:.2f}")
+            print(
+                f"  {name} (D)  "
+                f"S5:{s5:.2f}  H2:{hit2:.2f}  H3:{hit3:.2f}  "
+                f"Adj:{adj_sog:.2f}  Sc2:{score2:.2f}  Sc3:{score3:.2f}"
+            )
 
         print("")
 
