@@ -1,126 +1,100 @@
 import time
 import requests
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 BASE = "https://api-web.nhle.com/v1"
-TODAY = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-
-SEASON = "20252026"   # update each season
-GAME_TYPE = "2"       # 2 = regular season
+TZ = ZoneInfo("America/Toronto")
+TODAY = datetime.now(TZ).strftime("%Y-%m-%d")
 
 SESSION = requests.Session()
 TIMEOUT = 20
 
-# Throttle to avoid bursts (tune if needed)
-PER_REQUEST_SLEEP_SEC = 0.12
+# Polite pacing (prevents 429s)
+SLEEP_BETWEEN_CALLS = 0.15
 
-def safe_get_json(url: str, max_retries: int = 6) -> dict:
-    """
-    GET JSON with retry/backoff for 429 and transient errors.
-    """
-    backoff = 0.5
-    for attempt in range(max_retries):
+def get_json(url: str, max_retries: int = 6) -> dict:
+    backoff = 0.6
+    for _ in range(max_retries):
         r = SESSION.get(url, timeout=TIMEOUT)
 
         # Rate limited
         if r.status_code == 429:
             retry_after = r.headers.get("Retry-After")
-            if retry_after and retry_after.isdigit():
-                wait = float(retry_after)
-            else:
-                wait = backoff
-                backoff = min(backoff * 2, 10)
-
+            wait = float(retry_after) if (retry_after and retry_after.isdigit()) else backoff
             time.sleep(wait)
+            backoff = min(backoff * 2, 12)
             continue
 
-        # Other errors
-        if r.status_code >= 400:
-            r.raise_for_status()
-
+        r.raise_for_status()
         return r.json()
 
-    raise RuntimeError(f"Failed after retries (rate limited or unavailable): {url}")
+    raise RuntimeError(f"Failed after retries: {url}")
 
-def get_teams_playing_today() -> list[str]:
+def teams_playing_today() -> list[str]:
     """
-    Returns team abbreviations (e.g., 'NJD', 'SEA') ONLY for TODAY.
-    IMPORTANT: schedule/{date} may return a week object; we filter to the day that matches TODAY.
+    Uses daily score endpoint so we ONLY get today's games.
+    Endpoint documented as /v1/score/{date}.
     """
-    url = f"{BASE}/schedule/{TODAY}"
-    data = safe_get_json(url)
-
+    data = get_json(f"{BASE}/score/{TODAY}")
     teams = set()
 
-    # Most common shape: data["gameWeek"] -> list of days -> day["date"] and day["games"]
-    for day in data.get("gameWeek", []):
-        # day["date"] is typically "YYYY-MM-DD"
-        if (day.get("date") or "") != TODAY:
-            continue
-        for g in day.get("games", []):
-            home = (g.get("homeTeam") or {}).get("abbrev")
-            away = (g.get("awayTeam") or {}).get("abbrev")
-            if home: teams.add(home)
-            if away: teams.add(away)
-
-    # Fallback: if API ever returns just "games"
-    if not teams and "games" in data:
-        for g in data.get("games", []):
-            # Some variants include gameDate; filter if present
-            game_date = (g.get("gameDate") or "")[:10]
-            if game_date and game_date != TODAY:
-                continue
-            home = (g.get("homeTeam") or {}).get("abbrev")
-            away = (g.get("awayTeam") or {}).get("abbrev")
-            if home: teams.add(home)
-            if away: teams.add(away)
+    for g in data.get("games", []):
+        home = (g.get("homeTeam") or {}).get("abbrev")
+        away = (g.get("awayTeam") or {}).get("abbrev")
+        if home: teams.add(home)
+        if away: teams.add(away)
 
     return sorted(teams)
 
-def get_roster(team_abbrev: str) -> list[tuple[int, str, str]]:
+def roster_skater_ids(team_abbrev: str) -> list[tuple[int, str, str]]:
     """
-    Returns list of (player_id, full_name, position_code) for skaters only.
-    Endpoint: /v1/roster/{team}/current
+    Current roster endpoint: /v1/roster/{team}/current
+    Returns (player_id, name, pos_code) for F and D only (no goalies).
     """
-    url = f"{BASE}/roster/{team_abbrev}/current"
-    data = safe_get_json(url)
+    data = get_json(f"{BASE}/roster/{team_abbrev}/current")
+    out = []
 
-    players: list[tuple[int, str, str]] = []
-
-    def _name(p: dict) -> str:
+    def name(p: dict) -> str:
         first = (p.get("firstName") or {}).get("default") or p.get("firstName")
         last = (p.get("lastName") or {}).get("default") or p.get("lastName")
         return (" ".join([x for x in [first, last] if x]) or p.get("fullName") or "Unknown").strip()
 
-    for group_key, pos_code in [("forwards", "F"), ("defensemen", "D")]:
+    for group_key, pos in [("forwards", "F"), ("defensemen", "D")]:
         for p in data.get(group_key, []):
             pid = p.get("id")
             if isinstance(pid, int):
-                players.append((pid, _name(p), pos_code))
+                out.append((pid, name(p), pos))
 
-    return players
+    return out
 
-def last5_avg_shots(player_id: int) -> float | None:
+def last5_avg_shots_from_landing(player_id: int) -> float | None:
     """
-    Endpoint: /v1/player/{player}/game-log/{season}/{game-type}
-    We take the most recent 5 games that contain 'shots'.
+    Player landing endpoint: /v1/player/{player}/landing
+    Often includes last 5 games info (varies by season/data availability),
+    so we try a few common shapes and compute average shots.
     """
-    url = f"{BASE}/player/{player_id}/game-log/{SEASON}/{GAME_TYPE}"
-    data = safe_get_json(url)
+    data = get_json(f"{BASE}/player/{player_id}/landing")
 
-    game_log = data.get("gameLog") or data.get("gamelog") or data.get("games") or []
-    if not isinstance(game_log, list) or not game_log:
+    # Common candidates where last-5 might live
+    candidates = []
+    for key in ["last5Games", "lastFiveGames", "last5", "recentGames"]:
+        v = data.get(key)
+        if isinstance(v, list):
+            candidates = v
+            break
+
+    # If the API doesn't give last-5 in landing, return None
+    if not candidates:
         return None
 
-    shots: list[int] = []
-    for g in game_log:
+    shots = []
+    for g in candidates[:5]:
         s = g.get("shots")
-        if s is None:
-            s = (g.get("skaterStats") or {}).get("shots")
+        if s is None and isinstance(g.get("skaterStats"), dict):
+            s = g["skaterStats"].get("shots")
         if isinstance(s, int):
             shots.append(s)
-        if len(shots) == 5:
-            break
 
     if len(shots) < 5:
         return None
@@ -129,25 +103,25 @@ def last5_avg_shots(player_id: int) -> float | None:
 
 def main():
     print(f"\nNHL Shot Leaders (Last 5 Games) — {TODAY}\n")
+    print("VERSION: v4 (score endpoint + landing last5)\n")
 
-    teams = get_teams_playing_today()
+    teams = teams_playing_today()
     if not teams:
-        print("No teams found for today (schedule parse returned empty).")
+        print("No games found for today.")
         return
 
     for team in teams:
-        roster = get_roster(team)
+        skaters = roster_skater_ids(team)
 
-        results: list[tuple[str, str, float]] = []
-        for pid, name, pos in roster:
-            # gentle throttle to reduce 429s
-            time.sleep(PER_REQUEST_SLEEP_SEC)
-
-            avg = last5_avg_shots(pid)
+        results = []
+        for pid, name, pos in skaters:
+            time.sleep(SLEEP_BETWEEN_CALLS)
+            avg = last5_avg_shots_from_landing(pid)
             if avg is None:
                 continue
             results.append((name, pos, avg))
 
+        # Sort and print: 4 forwards + 1 defense if available
         forwards = [r for r in results if r[1] == "F"]
         defense = [r for r in results if r[1] == "D"]
 
@@ -161,7 +135,6 @@ def main():
         if defense:
             name, pos, avg = defense[0]
             print(f"  {name} (D)  {avg:.2f}")
-
         print("")
 
 if __name__ == "__main__":
