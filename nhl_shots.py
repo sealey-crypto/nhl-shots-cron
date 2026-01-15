@@ -86,9 +86,6 @@ def last10(player_id):
     # Need at least 5 games to be meaningful
     return shots if len(shots) >= 5 else None
 
-if name == "Jack Quinn":
-    print("DEBUG Quinn last10 shots:", shotsN)
-
 def stddev(vals):
     m = sum(vals) / len(vals)
     return sqrt(sum((v - m) ** 2 for v in vals) / len(vals))
