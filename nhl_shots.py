@@ -1,13 +1,16 @@
+import os
+import sys
 import time
 import requests
-import os
-from zoneinfo import ZoneInfo
 from math import sqrt
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
+# ----------------------------
+# Config
+# ----------------------------
 BASE = "https://api-web.nhle.com/v1"
 TZ = ZoneInfo("America/Toronto")
-TODAY = datetime.now(TZ).strftime("%Y-%m-%d")
 
 SEASON = "20252026"
 GAME_TYPE = "2"  # regular season
@@ -15,14 +18,29 @@ GAME_TYPE = "2"  # regular season
 SESSION = requests.Session()
 TIMEOUT = 20
 
-# Rate limit control
+# Polite pacing to avoid 429s
 SLEEP_BETWEEN_CALLS = 0.18
 
-# League average shots against per game (baseline)
-LEAGUE_AVG_SA = 28.0
+# League baseline shots against per game (all situations) used for boost
+# Keep as constant to reduce extra calls and rate limiting.
+LEAGUE_AVG_SA = float(os.getenv("LEAGUE_AVG_SA", "28.0"))
+
+# Sample size
+N_GAMES = int(os.getenv("N_GAMES", "10"))
+
+# Google Sheets webhook (Apps Script Web App)
+GS_WEBHOOK_URL = os.getenv("GS_WEBHOOK_URL", "").strip()
+GS_SECRET = os.getenv("GS_SECRET", "").strip()
+
+# ----------------------------
+# Helpers
+# ----------------------------
+def today_str() -> str:
+    return datetime.now(TZ).strftime("%Y-%m-%d")
 
 
-# -------------------- HTTP HELPERS --------------------
+TODAY = today_str()
+
 
 def get_json(url: str, max_retries: int = 7) -> dict:
     backoff = 0.6
@@ -42,177 +60,260 @@ def get_json(url: str, max_retries: int = 7) -> dict:
     raise RuntimeError(f"Failed after retries: {url}")
 
 
-# -------------------- NHL DATA --------------------
+def stddev(vals: list[int]) -> float:
+    m = sum(vals) / len(vals)
+    var = sum((v - m) ** 2 for v in vals) / len(vals)
+    return sqrt(var)
 
-def get_matchups_today():
+
+def post_rows_to_sheets(rows: list[dict]) -> None:
+    """
+    Posts rows to your Google Sheets webhook.
+    Expects Apps Script to accept:
+      { "secret": "...", "rows": [ {...}, {...} ] }
+    If your Apps Script also supports "tab", you can add it here.
+    """
+    if not GS_WEBHOOK_URL or not GS_SECRET:
+        print("ℹ️ GS webhook not configured (missing GS_WEBHOOK_URL or GS_SECRET). Skipping post.")
+        return
+
+    payload = {
+        "secret": GS_SECRET,
+        "rows": rows,
+    }
+    r = SESSION.post(GS_WEBHOOK_URL, json=payload, timeout=TIMEOUT)
+    r.raise_for_status()
+
+
+# ----------------------------
+# NHL data fetch
+# ----------------------------
+def get_matchups_today() -> dict[str, str]:
+    """
+    Returns mapping like: {"NJD": "SEA", "SEA": "NJD", ...}
+    """
     data = get_json(f"{BASE}/score/{TODAY}")
-    matchups = {}
+    matchups: dict[str, str] = {}
+
     for g in data.get("games", []):
         home = (g.get("homeTeam") or {}).get("abbrev")
         away = (g.get("awayTeam") or {}).get("abbrev")
         if home and away:
             matchups[home] = away
             matchups[away] = home
+
     return matchups
 
 
-def roster_skaters(team):
-    data = get_json(f"{BASE}/roster/{team}/current")
-    out = []
+def roster_skaters(team_abbrev: str) -> list[tuple[int, str, str]]:
+    """
+    Returns (player_id, name, pos_code) for skaters only (F and D).
+    """
+    data = get_json(f"{BASE}/roster/{team_abbrev}/current")
+    out: list[tuple[int, str, str]] = []
 
-    def pname(p):
-        first = (p.get("firstName") or {}).get("default")
-        last = (p.get("lastName") or {}).get("default")
-        return f"{first} {last}".strip()
+    def full_name(p: dict) -> str:
+        first = (p.get("firstName") or {}).get("default") or p.get("firstName")
+        last = (p.get("lastName") or {}).get("default") or p.get("lastName")
+        return (" ".join([x for x in [first, last] if x]) or p.get("fullName") or "Unknown").strip()
 
-    for p in data.get("forwards", []):
-        out.append((p["id"], pname(p), "F"))
-    for p in data.get("defensemen", []):
-        out.append((p["id"], pname(p), "D"))
+    for group_key, pos in [("forwards", "F"), ("defensemen", "D")]:
+        for p in data.get(group_key, []):
+            pid = p.get("id")
+            if isinstance(pid, int):
+                out.append((pid, full_name(p), pos))
 
     return out
 
 
-def last5_shots(pid):
-    data = get_json(f"{BASE}/player/{pid}/landing")
+def lastN_shots_from_game_log(player_id: int, n: int = 10) -> list[int] | None:
+    """
+    Pull last N game shots from the NHL game-log endpoint.
+    Returns list of ints length N, or None if not enough data.
+    """
+    url = f"{BASE}/player/{player_id}/game-log/{SEASON}/{GAME_TYPE}"
+    data = get_json(url)
 
-    games = None
-    for key in ["last5Games", "lastFiveGames", "recentGames"]:
-        if key in data:
-            games = data[key]
-            break
-
-    if not games:
+    game_log = data.get("gameLog")
+    if not isinstance(game_log, list) or not game_log:
         return None
 
-    shots = []
-    for g in games[:5]:
+    shots: list[int] = []
+    for g in game_log:
         s = g.get("shots")
-        if s is None and g.get("skaterStats"):
+        if s is None and isinstance(g.get("skaterStats"), dict):
             s = g["skaterStats"].get("shots")
+
         if isinstance(s, int):
             shots.append(s)
 
-    return shots if len(shots) == 5 else None
+        if len(shots) >= n:
+            break
+
+    if len(shots) < n:
+        return None
+
+    return shots[:n]
 
 
-def stddev(vals):
-    m = sum(vals) / len(vals)
-    return sqrt(sum((v - m) ** 2 for v in vals) / len(vals))
-
-
-def club_shots_against(team):
-    data = get_json(f"{BASE}/club-stats/{team}/{SEASON}/{GAME_TYPE}")
+def club_shots_against_per_game(team_abbrev: str) -> float | None:
+    """
+    Compute opponent shots against per game (all situations) from club-stats endpoint.
+    Endpoint provides goalie shotsAgainst totals and skater gamesPlayed.
+    We compute:
+      shotsAgainstPerGame = (sum goalies.shotsAgainst) / (max skaters.gamesPlayed)
+    """
+    data = get_json(f"{BASE}/club-stats/{team_abbrev}/{SEASON}/{GAME_TYPE}")
 
     skaters = data.get("skaters", [])
     goalies = data.get("goalies", [])
 
-    if not skaters or not goalies:
+    if not isinstance(skaters, list) or not isinstance(goalies, list) or not skaters or not goalies:
         return None
 
-    gp = max(s["gamesPlayed"] for s in skaters if "gamesPlayed" in s)
-    sa = sum(g["shotsAgainst"] for g in goalies if "shotsAgainst" in g)
+    gp_vals = [s.get("gamesPlayed") for s in skaters if isinstance(s.get("gamesPlayed"), int)]
+    if not gp_vals:
+        return None
 
-    return sa / gp if gp > 0 else None
+    team_gp = max(gp_vals)
+    if team_gp <= 0:
+        return None
 
+    sa_vals = [g.get("shotsAgainst") for g in goalies if isinstance(g.get("shotsAgainst"), int)]
+    if not sa_vals:
+        return None
 
-# -------------------- GOOGLE SHEETS WEBHOOK --------------------
-
-def post_to_google_sheets(rows, date_str):
-    url = os.getenv("SHEETS_WEBHOOK_URL", "").strip()
-    token = os.getenv("SHEETS_TOKEN", "").strip()
-
-    if not url or not token:
-        print("⚠️ Sheets webhook not configured")
-        return
-
-    payload = {
-        "token": token,
-        "date": date_str,
-        "rows": rows
-    }
-
-    try:
-        SESSION.post(url, json=payload, timeout=TIMEOUT).raise_for_status()
-        print("✅ Posted Top 5 per team to Google Sheets")
-    except Exception as e:
-        print("⚠️ Sheets webhook failed:", e)
+    total_sa = sum(sa_vals)
+    return total_sa / team_gp
 
 
-# -------------------- MAIN --------------------
-
-def main():
-    print(f"\nNHL Shot Parlay Board - Last 5 SOG - {TODAY}\n")
+# ----------------------------
+# Main
+# ----------------------------
+def main() -> None:
+    print(f"NHL Shot Parlay Board - Last {N_GAMES} SOG - {TODAY}")
     print(f"Boost baseline (league SA): {LEAGUE_AVG_SA:.1f}\n")
 
     matchups = get_matchups_today()
     if not matchups:
-        print("No games today.")
+        print("No games found for today.")
         return
 
-    opp_sa_cache = {}
-    all_top_rows = []
+    # Cache opponent SA so we only call club-stats once per opponent team
+    opp_sa_cache: dict[str, float] = {}
 
-    for team in sorted(matchups.keys()):
-        opp = matchups[team]
+    # We'll compute all rows, then print + post Top 5 per team.
+    all_rows: list[dict] = []
 
+    # iterate by team (includes both sides, like NJD and SEA)
+    teams = sorted(matchups.keys())
+
+    for team in teams:
+        opp = matchups.get(team)
+        if not opp:
+            continue
+
+        # Opponent SA
         if opp not in opp_sa_cache:
             time.sleep(SLEEP_BETWEEN_CALLS)
-            sa = club_shots_against(opp)
-            opp_sa_cache[opp] = sa if sa else LEAGUE_AVG_SA
+            opp_sa = club_shots_against_per_game(opp)
+            opp_sa_cache[opp] = opp_sa if opp_sa is not None else LEAGUE_AVG_SA
 
         opp_sa = opp_sa_cache[opp]
-        boost = opp_sa / LEAGUE_AVG_SA
+        boost = (opp_sa / LEAGUE_AVG_SA) if LEAGUE_AVG_SA > 0 else 1.0
 
-        rows = []
+        skaters = roster_skaters(team)
 
-        for pid, name, pos in roster_skaters(team):
+        for pid, name, pos in skaters:
             time.sleep(SLEEP_BETWEEN_CALLS)
-            shots = last5_shots(pid)
-            if not shots:
+
+            shotsN = lastN_shots_from_game_log(pid, n=N_GAMES)
+            if shotsN is None:
                 continue
 
-            s5 = sum(shots) / 5
-            h2 = sum(1 for s in shots if s >= 2) / 5
-            h3 = sum(1 for s in shots if s >= 3) / 5
-            sd = stddev(shots)
-            adj = s5 * boost
+            sN = sum(shotsN) / float(N_GAMES)
+            hit2 = sum(1 for s in shotsN if s >= 2) / float(N_GAMES)
+            hit3 = sum(1 for s in shotsN if s >= 3) / float(N_GAMES)
+            sdN = stddev(shotsN)
 
-            sc2 = adj + 0.6 * h2 - 0.15 * sd
-            sc3 = adj + 0.6 * h3 - 0.20 * sd
+            adj_sog = sN * boost
 
-            rows.append((name, pos, s5, h2, h3, opp_sa, boost, adj, sc2, sc3))
+            # Your scoring formula (same as before)
+            score2 = adj_sog + 0.6 * hit2 - 0.15 * sdN
+            score3 = adj_sog + 0.6 * hit3 - 0.20 * sdN
 
-        forwards = [r for r in rows if r[1] == "F"]
-        defense = [r for r in rows if r[1] == "D"]
+            all_rows.append({
+                "Player": name,
+                "PlayerId": pid,
+                "Team": team,
+                "Opp": opp,
+                "Pos": pos,
+                f"S{N_GAMES}": round(sN, 4),
+                "Hit2": round(hit2, 4),
+                "Hit3": round(hit3, 4),
+                "OppSA": round(opp_sa, 4),
+                "Boost": round(boost, 6),
+                "AdjSOG": round(adj_sog, 4),
+                "Score2": round(score2, 4),
+                "Score3": round(score3, 4),
+                "Date": TODAY,
+            })
 
-        forwards.sort(key=lambda x: x[8], reverse=True)
-        defense.sort(key=lambda x: x[8], reverse=True)
+    # Print + post "Top 5 per team" (4F + 1D) based on Score2
+    output_rows: list[dict] = []
+    for team in sorted(set(r["Team"] for r in all_rows)):
+        team_rows = [r for r in all_rows if r["Team"] == team]
+        if not team_rows:
+            continue
 
-        print(f"{team} vs {opp} | Opp SA: {opp_sa:.1f} | Boost: {boost:.2f}\n")
+        opp = team_rows[0]["Opp"]
 
-        team_rows = []
+        forwards = [r for r in team_rows if r["Pos"] == "F"]
+        defense = [r for r in team_rows if r["Pos"] == "D"]
 
-        for r in forwards[:4]:
-            name, pos, s5, h2, h3, oppsa, boost, adj, sc2, sc3 = r
-            print(f"  {name}  S5:{s5:.2f}  H2:{h2:.2f}  H3:{h3:.2f}  Adj:{adj:.2f}  Sc2:{sc2:.2f}  Sc3:{sc3:.2f}")
-            team_rows.append(dict(player=name, team=team, opp=opp, pos="F",
-                                  s5=s5, hit2=h2, hit3=h3, oppSA=oppsa, boost=boost,
-                                  adjSOG=adj, score2=sc2, score3=sc3))
+        forwards.sort(key=lambda x: x["Score2"], reverse=True)
+        defense.sort(key=lambda x: x["Score2"], reverse=True)
 
-        if defense:
-            r = defense[0]
-            name, pos, s5, h2, h3, oppsa, boost, adj, sc2, sc3 = r
-            print(f"  {name} (D)  S5:{s5:.2f}  H2:{h2:.2f}  H3:{h3:.2f}  Adj:{adj:.2f}  Sc2:{sc2:.2f}  Sc3:{sc3:.2f}")
-            team_rows.append(dict(player=name, team=team, opp=opp, pos="D",
-                                  s5=s5, hit2=h2, hit3=h3, oppSA=oppsa, boost=boost,
-                                  adjSOG=adj, score2=sc2, score3=sc3))
+        top_f = forwards[:4]
+        top_d = defense[:1]
+
+        print(f"{team} vs {opp} | Opp SA: {team_rows[0]['OppSA']:.1f} | Boost: {team_rows[0]['Boost']:.2f}")
+        for r in top_f:
+            print(
+                f"  {r['Player']}  "
+                f"S{N_GAMES}:{r[f'S{N_GAMES}']:.2f}  "
+                f"H2:{r['Hit2']:.2f}  "
+                f"H3:{r['Hit3']:.2f}  "
+                f"Adj:{r['AdjSOG']:.2f}  "
+                f"Sc2:{r['Score2']:.2f}  "
+                f"Sc3:{r['Score3']:.2f}"
+            )
+            output_rows.append(r)
+
+        if top_d:
+            r = top_d[0]
+            print(
+                f"  {r['Player']} (D)  "
+                f"S{N_GAMES}:{r[f'S{N_GAMES}']:.2f}  "
+                f"H2:{r['Hit2']:.2f}  "
+                f"H3:{r['Hit3']:.2f}  "
+                f"Adj:{r['AdjSOG']:.2f}  "
+                f"Sc2:{r['Score2']:.2f}  "
+                f"Sc3:{r['Score3']:.2f}"
+            )
+            output_rows.append(r)
 
         print("")
-        all_top_rows.extend(team_rows)
 
-    post_to_google_sheets(all_top_rows, TODAY)
+    # Post to Sheets
+    try:
+        post_rows_to_sheets(output_rows)
+        print("✅ Posted Top 5 per team to Google Sheets")
+    except Exception as e:
+        print(f"❌ Failed to post to Google Sheets: {e}")
 
 
 if __name__ == "__main__":
+    # optional future modes: python nhl_shots.py candidates / results
+    # for now, keep it simple:
     main()
