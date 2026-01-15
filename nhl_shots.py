@@ -24,7 +24,6 @@ LEAGUE_AVG_SA = 28.0  # you set this recently; keep as-is or adjust later
 def today_str() -> str:
     return datetime.now(TZ).strftime("%Y-%m-%d")
 
-
 TODAY = today_str()
 
 
