@@ -15,7 +15,7 @@ SESSION = requests.Session()
 TIMEOUT = 20
 
 # Polite pacing to avoid 429s
-SLEEP_BETWEEN_CALLS = 0.20
+SLEEP_BETWEEN_CALLS = 0.60
 
 # Baseline league shots against per game (all situations) used for boost
 LEAGUE_AVG_SA = 28.0  # you set this recently; keep as-is or adjust later
