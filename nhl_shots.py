@@ -194,9 +194,14 @@ def main():
         for pid, player_name, pos in skaters:
             time.sleep(SLEEP_BETWEEN_CALLS)
 
-            shots10 = last_n_from_game_log(pid, n=10)
-            if shots10 is None:
-                continue
+try:
+    shots10 = last_n_from_game_log(pid, n=10)
+except RuntimeError as e:
+    print(f"⚠️ Skipping {player_name} ({team}) game-log due to error: {e}")
+    continue
+
+if shots10 is None:
+    continue
 
             s10 = sum(shots10) / 10.0
             hit2 = sum(1 for s in shots10 if s >= 2) / 10.0
