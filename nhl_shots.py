@@ -9,7 +9,7 @@ from datetime import datetime
 BASE = "https://api-web.nhle.com/v1"
 TZ = ZoneInfo("America/Toronto")
 
-SEASON = "20252026"
+SEASON = "20262027"
 GAME_TYPE = "2"  # regular season
 
 SESSION = requests.Session()
