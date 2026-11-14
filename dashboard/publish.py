@@ -59,7 +59,7 @@ def model_c(book, today):
     known = set()
     for r in forecasts[1:]:
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
-        if fv("game_date")==today: known.add((fv("player"),fv("team"),fv("opp")))
+        if fv("game_date") in (today, (dt.date.fromisoformat(today)+dt.timedelta(days=1)).isoformat()): known.add((fv("player"),fv("team"),fv("opp")))
     out=[]
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
@@ -78,7 +78,12 @@ def model_c(book, today):
                         market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
                         decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
                         status="ELIGIBLE"))
-    return out
+    # Keep one best-priced record per model/player/market/game across forecast reruns.
+    dedup={}
+    for leg in out:
+        key=(leg["model"],leg["player"],leg["team"],leg["opp"],leg["market"],leg["game_id"])
+        if key not in dedup or leg["ev"]>dedup[key]["ev"]: dedup[key]=leg
+    return list(dedup.values())
 
 def main():
     creds = Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"]),
