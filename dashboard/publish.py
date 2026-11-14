@@ -74,15 +74,18 @@ def model_c(book, today):
         if stamp_date != today: continue
         prob,ev,decimal=number(v("model_probability")),number(v("estimated_ev")),number(v("decimal_odds"))
         if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
+        # Reject mismatched or malformed price/probability/EV combinations.
+        if abs((prob * decimal - 1) - ev) > 0.015: continue
         out.append(dict(model="C",player=v("player"),team=v("team"),opp=v("opp"),
                         market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
                         decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
                         status="ELIGIBLE"))
-    # Keep one best-priced record per model/player/market/game across forecast reruns.
+    # Keep one record per player/market/game; do not maximize EV across reruns,
+    # since that would cherry-pick potentially stale historical quotes.
     dedup={}
     for leg in out:
         key=(leg["model"],leg["player"],leg["team"],leg["opp"],leg["market"],leg["game_id"])
-        if key not in dedup or leg["ev"]>dedup[key]["ev"]: dedup[key]=leg
+        if key not in dedup: dedup[key]=leg
     return list(dedup.values())
 
 def main():
