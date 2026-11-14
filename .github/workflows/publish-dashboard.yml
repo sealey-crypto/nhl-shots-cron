@@ -1,0 +1,28 @@
+name: Publish sanitized NHL dashboard picks
+on:
+  schedule:
+    - cron: '15 16,18,20,22,0,2 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install 'gspread>=6,<7' 'google-auth>=2,<3' 'requests>=2,<3'
+      - name: Publish current-day qualified picks
+        env:
+          GOOGLE_CREDENTIALS_JSON: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
+          MODEL_B_SHEET_ID: ${{ secrets.MODEL_B_SHEET_ID }}
+          MODEL_C_SHEET_ID: ${{ secrets.MODEL_C_SHEET_ID }}
+          GH_PUBLISH_TOKEN: ${{ secrets.GH_PUBLISH_TOKEN }}
+        run: |
+          if [ -z "$GOOGLE_CREDENTIALS_JSON" ] || [ -z "$MODEL_B_SHEET_ID" ] || [ -z "$MODEL_C_SHEET_ID" ] || [ -z "$GH_PUBLISH_TOKEN" ]; then
+            echo "::warning::Publishing secrets not configured; no public update performed"
+            exit 0
+          fi
+          python dashboard/publish.py
