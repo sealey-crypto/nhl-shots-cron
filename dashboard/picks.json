@@ -5,19 +5,6 @@
   "legs": [
     {
       "model": "B",
-      "player": "Luke Evangelista",
-      "team": "NJD",
-      "opp": "WSH",
-      "market": "3+ SOG",
-      "american_odds": "192",
-      "decimal_odds": 2.92,
-      "probability": 0.43799999999999994,
-      "ev": 0.278,
-      "game_id": "2026020318",
-      "status": "ELIGIBLE"
-    },
-    {
-      "model": "B",
       "player": "Dougie Hamilton",
       "team": "NJD",
       "opp": "WSH",
@@ -105,19 +92,6 @@
       "probability": 0.42100000000000004,
       "ev": 0.036000000000000004,
       "game_id": "2026020315",
-      "status": "ELIGIBLE"
-    },
-    {
-      "model": "B",
-      "player": "Luke Evangelista",
-      "team": "NJD",
-      "opp": "WSH",
-      "market": "2+ SOG",
-      "american_odds": "-164",
-      "decimal_odds": 1.609756098,
-      "probability": 0.636,
-      "ev": 0.024,
-      "game_id": "2026020318",
       "status": "ELIGIBLE"
     },
     {
@@ -342,7 +316,7 @@
       "status": "ELIGIBLE"
     }
   ],
-  "model_b_count": 10,
+  "model_b_count": 8,
   "model_c_count": 16,
-  "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
+  "note": "Research only. Model B Luke Evangelista rows quarantined pending team/game validation; estimated EV unvalidated."
 }
