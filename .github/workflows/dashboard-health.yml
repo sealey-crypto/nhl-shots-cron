@@ -1,7 +1,5 @@
 name: NHL dashboard health check
 on:
-  schedule:
-    - cron: '*/5 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
