@@ -1,0 +1,37 @@
+{
+  "model_b": {
+    "status": "Historical",
+    "snapshot_date": "2026-11-13",
+    "qualified_pairs": 0,
+    "legs": [
+      {
+        "player": "Roman Josi",
+        "market": "3+ SOG",
+        "fd_odds": "+128",
+        "model_probability": "51.4%",
+        "estimated_ev": "+17.2%",
+        "eligibility": "Eligible at snapshot"
+      },
+      {
+        "player": "Steven Stamkos",
+        "market": "3+ SOG",
+        "fd_odds": "+134",
+        "model_probability": "48.2%",
+        "estimated_ev": "+12.9%",
+        "eligibility": "Eligible at snapshot"
+      },
+      {
+        "player": "Roman Josi",
+        "market": "2+ SOG",
+        "fd_odds": "-235",
+        "model_probability": "68.7%",
+        "estimated_ev": "-2.1%",
+        "eligibility": "Not eligible"
+      }
+    ]
+  },
+  "model_c": {
+    "status": "Pending",
+    "note": "Live feed not verified"
+  }
+}
