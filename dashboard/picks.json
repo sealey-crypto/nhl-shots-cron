@@ -1,8 +1,22 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-14",
-  "generated_at_utc": "2026-11-14T21:20:35.092Z",
+  "generated_at_utc": "2026-11-14T21:23:22.752714+00:00",
   "legs": [
+    {
+      "model": "B",
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "3+ SOG",
+      "american_odds": "192",
+      "decimal_odds": 2.92,
+      "probability": 0.43799999999999994,
+      "ev": 0.278,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE",
+      "player_id": "8482146"
+    },
     {
       "model": "B",
       "player": "Dougie Hamilton",
@@ -14,7 +28,8 @@
       "probability": 0.46799999999999997,
       "ev": 0.272,
       "game_id": "2026020318",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8476462"
     },
     {
       "model": "B",
@@ -27,7 +42,8 @@
       "probability": 0.45399999999999996,
       "ev": 0.127,
       "game_id": "2026020320",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8477935"
     },
     {
       "model": "B",
@@ -40,7 +56,8 @@
       "probability": 0.68,
       "ev": 0.105,
       "game_id": "2026020319",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8478460"
     },
     {
       "model": "B",
@@ -53,7 +70,8 @@
       "probability": 0.5760000000000001,
       "ev": 0.086,
       "game_id": "2026020313",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8478493"
     },
     {
       "model": "B",
@@ -66,7 +84,8 @@
       "probability": 0.555,
       "ev": 0.047,
       "game_id": "2026020319",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8484166"
     },
     {
       "model": "B",
@@ -79,7 +98,8 @@
       "probability": 0.664,
       "ev": 0.045,
       "game_id": "2026020318",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8478414"
     },
     {
       "model": "B",
@@ -92,7 +112,22 @@
       "probability": 0.42100000000000004,
       "ev": 0.036000000000000004,
       "game_id": "2026020315",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8480018"
+    },
+    {
+      "model": "B",
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "2+ SOG",
+      "american_odds": "-164",
+      "decimal_odds": 1.609756098,
+      "probability": 0.636,
+      "ev": 0.024,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE",
+      "player_id": "8482146"
     },
     {
       "model": "B",
@@ -105,7 +140,8 @@
       "probability": 0.657,
       "ev": 0.013000000000000001,
       "game_id": "2026020318",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8476462"
     },
     {
       "model": "C",
@@ -118,7 +154,8 @@
       "probability": 0.4336,
       "ev": 0.0667,
       "game_id": "2026020315",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8480018"
     },
     {
       "model": "C",
@@ -131,7 +168,8 @@
       "probability": 0.5284,
       "ev": 0.078,
       "game_id": "2026020320",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8477933"
     },
     {
       "model": "C",
@@ -144,7 +182,8 @@
       "probability": 0.4913,
       "ev": 0.0417,
       "game_id": "2026020320",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8483516"
     },
     {
       "model": "C",
@@ -157,7 +196,8 @@
       "probability": 0.4554,
       "ev": 0.102,
       "game_id": "2026020320",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8482077"
     },
     {
       "model": "C",
@@ -170,7 +210,8 @@
       "probability": 0.633,
       "ev": 0.0441,
       "game_id": "2026020324",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8475798"
     },
     {
       "model": "C",
@@ -183,7 +224,8 @@
       "probability": 0.6058,
       "ev": 0.0717,
       "game_id": "2026020329",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8478444"
     },
     {
       "model": "C",
@@ -196,11 +238,12 @@
       "probability": 0.4328,
       "ev": 0.0475,
       "game_id": "2026020325",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8480797"
     },
     {
       "model": "C",
-      "player": "Tim Stützle",
+      "player": "Tim St\u00fctzle",
       "team": "OTT",
       "opp": "PIT",
       "market": "3+ SOG",
@@ -209,7 +252,8 @@
       "probability": 0.4283,
       "ev": 0.0622,
       "game_id": "2026020317",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8482116"
     },
     {
       "model": "C",
@@ -222,7 +266,8 @@
       "probability": 0.6307,
       "ev": 0.0457,
       "game_id": "2026020317",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8482105"
     },
     {
       "model": "C",
@@ -235,7 +280,8 @@
       "probability": 0.7014,
       "ev": 0.1045,
       "game_id": "2026020317",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8474578"
     },
     {
       "model": "C",
@@ -248,7 +294,8 @@
       "probability": 0.6466,
       "ev": 0.0409,
       "game_id": "2026020317",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8485414"
     },
     {
       "model": "C",
@@ -261,7 +308,8 @@
       "probability": 0.6827,
       "ev": 0.0459,
       "game_id": "2026020322",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8484145"
     },
     {
       "model": "C",
@@ -274,7 +322,8 @@
       "probability": 0.5059,
       "ev": 0.113,
       "game_id": "2026020322",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8482097"
     },
     {
       "model": "C",
@@ -287,7 +336,8 @@
       "probability": 0.4587,
       "ev": 0.0917,
       "game_id": "2026020313",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8480800"
     },
     {
       "model": "C",
@@ -300,7 +350,8 @@
       "probability": 0.6554,
       "ev": 0.0455,
       "game_id": "2026020318",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8482146"
     },
     {
       "model": "C",
@@ -313,10 +364,11 @@
       "probability": 0.4427,
       "ev": 0.0714,
       "game_id": "2026020318",
-      "status": "ELIGIBLE"
+      "status": "ELIGIBLE",
+      "player_id": "8477949"
     }
   ],
-  "model_b_count": 8,
+  "model_b_count": 10,
   "model_c_count": 16,
-  "note": "Research only. Model B Luke Evangelista rows quarantined pending team/game validation; estimated EV unvalidated."
+  "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
