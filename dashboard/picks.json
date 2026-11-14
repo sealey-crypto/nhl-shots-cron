@@ -1,7 +1,9 @@
 {
   "schema_version": 1,
-  "snapshot_date": null,
-  "generated_at_utc": null,
+  "snapshot_date": "2026-11-14",
+  "generated_at_utc": "2026-11-14T18:14:58.229786+00:00",
   "legs": [],
-  "note": "No verified current-day public picks have been published. This file contains no credentials or private model data."
+  "model_b_count": 0,
+  "model_c_count": 0,
+  "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
