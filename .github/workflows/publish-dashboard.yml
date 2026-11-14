@@ -1,5 +1,9 @@
 name: Publish sanitized NHL dashboard picks
 on:
+  push:
+    paths:
+      - '.github/workflows/publish-dashboard.yml'
+      - 'dashboard/publish.py'
   schedule:
     - cron: '15 16,18,20,22,0,2 * * *'
   workflow_dispatch:
