@@ -88,6 +88,41 @@ def model_c(book, today):
         if key not in dedup: dedup[key]=leg
     return list(dedup.values())
 
+def verify_roster_and_add_photos(legs):
+    """Verify current NHL team membership and attach official NHL headshot IDs.
+    Fail closed on team mismatches; if NHL API is unavailable, omit unverified legs.
+    """
+    cache = {}
+    verified = []
+    for leg in legs:
+        team = leg["team"]
+        if team not in cache:
+            try:
+                response = requests.get(f"https://api-web.nhle.com/v1/roster/{team}/current", timeout=12)
+                response.raise_for_status()
+                data = response.json()
+                roster = {}
+                for group in ("forwards", "defensemen", "goalies"):
+                    for p in data.get(group, []):
+                        first = p.get("firstName", {}).get("default", "")
+                        last = p.get("lastName", {}).get("default", "")
+                        if first and last and p.get("id"):
+                            roster[(first + " " + last).casefold()] = str(p["id"])
+                cache[team] = roster
+            except (requests.RequestException, ValueError) as exc:
+                print(f"Roster verification unavailable for {team}: {exc}")
+                cache[team] = None
+        roster = cache[team]
+        if roster is None:
+            continue  # No unverified team/player combinations in public feed.
+        player_id = roster.get(leg["player"].casefold())
+        if not player_id:
+            print(f"Quarantined mismatched player/team: {leg['player']} / {team}")
+            continue
+        leg["player_id"] = player_id
+        verified.append(leg)
+    return verified
+
 def main():
     creds = Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"]),
                  scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
@@ -95,7 +130,9 @@ def main():
     today=dt.datetime.now(ZONE).date().isoformat()
     b=model_b(client.open_by_key(os.environ["MODEL_B_SHEET_ID"]),today)
     c=model_c(client.open_by_key(os.environ["MODEL_C_SHEET_ID"]),today)
-    legs=b+c
+    legs=verify_roster_and_add_photos(b+c)
+    b=[x for x in legs if x['model']=='B']
+    c=[x for x in legs if x['model']=='C']
     payload=dict(schema_version=1,snapshot_date=today,
         generated_at_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
         legs=legs,model_b_count=len(b),model_c_count=len(c),
