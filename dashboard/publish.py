@@ -1,0 +1,105 @@
+"""Publish only qualified, current-day NHL shot research legs to the public dashboard.
+
+Requires GOOGLE_CREDENTIALS_JSON, MODEL_B_SHEET_ID, MODEL_C_SHEET_ID and
+GH_PUBLISH_TOKEN. Never publish credentials, entire sheets, or historical rows.
+"""
+import base64
+import datetime as dt
+import json
+import os
+from zoneinfo import ZoneInfo
+import requests
+import gspread
+from google.oauth2.service_account import Credentials
+
+ZONE = ZoneInfo("America/Toronto")
+REPO = "sealey-crypto/nhl-shots-cron"
+TARGET = "dashboard/picks.json"
+API = f"https://api.github.com/repos/{REPO}/contents/{TARGET}"
+
+def number(value):
+    try: return float(str(value).replace("%","").replace(",","").strip())
+    except (ValueError,TypeError): return None
+
+def percent(value):
+    n = number(value)
+    return n / 100 if n is not None and "%" in str(value) else n
+
+def read(book, title):
+    try: return book.worksheet(title).get_all_values()
+    except gspread.WorksheetNotFound: return []
+
+def model_b(book, today):
+    rows = read(book, "Model B Auto Parlays")
+    if len(rows) < 11 or len(rows[1]) < 2 or rows[1][1] != today: return []
+    out = []
+    for cells in rows[10:]:
+        cells += [""] * max(0, 15-len(cells))
+        player, team, opp, market, american, dec, _, prob, _, ev, start, game, eligibility = cells[:13]
+        if eligibility != "ELIGIBLE" or not market.startswith(("2+ SOG","3+ SOG")): continue
+        probability, edge, decimal = percent(prob), percent(ev), number(dec)
+        if not all((player, game, start, probability is not None, edge is not None, decimal)):
+            continue
+        try: game_day = dt.datetime.fromisoformat(start.replace("Z","+00:00")).astimezone(ZONE).date().isoformat()
+        except ValueError: continue
+        if game_day != today or edge <= 0 or not 0 < probability < 1 or decimal <= 1: continue
+        out.append(dict(model="B",player=player,team=team,opp=opp,market=market,
+                        american_odds=american,decimal_odds=decimal,probability=probability,
+                        ev=edge,game_id=str(game),status="ELIGIBLE"))
+    return out
+
+def model_c(book, today):
+    forecasts = read(book, "Daily Forecasts")
+    picks = read(book, "Paper Picks")
+    if len(forecasts) < 2 or len(picks) < 2: return []
+    fheaders = {k:i for i,k in enumerate(forecasts[0])}
+    pheaders = {k:i for i,k in enumerate(picks[0])}
+    if not {"game_date","player","team","opp"}.issubset(fheaders): return []
+    if not {"forecast_utc","player","team","opp","line","side","book","american_odds","decimal_odds","model_probability","estimated_ev","game_id"}.issubset(pheaders): return []
+    known = set()
+    for r in forecasts[1:]:
+        def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
+        if fv("game_date")==today: known.add((fv("player"),fv("team"),fv("opp")))
+    out=[]
+    for r in picks[1:]:
+        def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
+        if (v("player"),v("team"),v("opp")) not in known: continue
+        if v("side")!="OVER" or v("book").lower()!="fanduel": continue
+        line=number(v("line"))
+        # Sportsbook total 1.5 corresponds to 2+; total 2.5 to 3+.
+        if line not in (1.5,2.5): continue
+        stamp=v("forecast_utc")
+        try: stamp_date=dt.datetime.fromisoformat(stamp.replace("Z","+00:00")).astimezone(ZONE).date().isoformat()
+        except ValueError: continue
+        if stamp_date != today: continue
+        prob,ev,decimal=number(v("model_probability")),number(v("estimated_ev")),number(v("decimal_odds"))
+        if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
+        out.append(dict(model="C",player=v("player"),team=v("team"),opp=v("opp"),
+                        market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
+                        decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
+                        status="ELIGIBLE"))
+    return out
+
+def main():
+    creds = Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"]),
+                 scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
+    client = gspread.authorize(creds)
+    today=dt.datetime.now(ZONE).date().isoformat()
+    b=model_b(client.open_by_key(os.environ["MODEL_B_SHEET_ID"]),today)
+    c=model_c(client.open_by_key(os.environ["MODEL_C_SHEET_ID"]),today)
+    legs=b+c
+    payload=dict(schema_version=1,snapshot_date=today,
+        generated_at_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
+        legs=legs,model_b_count=len(b),model_c_count=len(c),
+        note="Research only; model EV is unvalidated. No combined parlay prices implied.")
+    token=os.environ["GH_PUBLISH_TOKEN"]
+    headers={"Authorization":f"Bearer {token}","Accept":"application/vnd.github+json"}
+    existing=requests.get(API,headers=headers,timeout=30)
+    existing.raise_for_status()
+    content=base64.b64encode((json.dumps(payload,indent=2)+"\n").encode()).decode()
+    result=requests.put(API,headers=headers,timeout=30,json={
+        "message":f"Publish sanitized NHL research snapshot {today}",
+        "content":content,"sha":existing.json()["sha"],"branch":"main"})
+    result.raise_for_status()
+    print(f"Published snapshot {today}: Model B={len(b)} Model C={len(c)}")
+if __name__=="__main__": main()
