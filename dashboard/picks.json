@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-14",
-  "generated_at_utc": "2026-11-14T21:00:42.357Z",
+  "generated_at_utc": "2026-11-14T21:00:54.370368+00:00",
   "legs": [
     {
       "model": "C",
@@ -96,7 +96,7 @@
     },
     {
       "model": "C",
-      "player": "Tim Stützle",
+      "player": "Tim St\u00fctzle",
       "team": "OTT",
       "opp": "PIT",
       "market": "3+ SOG",
@@ -214,5 +214,5 @@
   ],
   "model_b_count": 0,
   "model_c_count": 16,
-  "note": "Research only; model EV is unvalidated. Model B currently stale and excluded. No combined parlay prices implied."
+  "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
