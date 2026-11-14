@@ -1,8 +1,138 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-14",
-  "generated_at_utc": "2026-11-14T21:12:07.921248+00:00",
+  "generated_at_utc": "2026-11-14T21:20:35.092Z",
   "legs": [
+    {
+      "model": "B",
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "3+ SOG",
+      "american_odds": "192",
+      "decimal_odds": 2.92,
+      "probability": 0.43799999999999994,
+      "ev": 0.278,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "3+ SOG",
+      "american_odds": "172",
+      "decimal_odds": 2.72,
+      "probability": 0.46799999999999997,
+      "ev": 0.272,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Sam Bennett",
+      "team": "FLA",
+      "opp": "STL",
+      "market": "3+ SOG",
+      "american_odds": "148",
+      "decimal_odds": 2.48,
+      "probability": 0.45399999999999996,
+      "ev": 0.127,
+      "game_id": "2026020320",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Zach Werenski",
+      "team": "CBJ",
+      "opp": "PHI",
+      "market": "3+ SOG",
+      "american_odds": "-160",
+      "decimal_odds": 1.625,
+      "probability": 0.68,
+      "ev": 0.105,
+      "game_id": "2026020319",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Joel Eriksson Ek",
+      "team": "MIN",
+      "opp": "BOS",
+      "market": "3+ SOG",
+      "american_odds": "-113",
+      "decimal_odds": 1.884955752,
+      "probability": 0.5760000000000001,
+      "ev": 0.086,
+      "game_id": "2026020313",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Adam Fantilli",
+      "team": "CBJ",
+      "opp": "PHI",
+      "market": "3+ SOG",
+      "american_odds": "-113",
+      "decimal_odds": 1.884955752,
+      "probability": 0.555,
+      "ev": 0.047,
+      "game_id": "2026020319",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Timo Meier",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "3+ SOG",
+      "american_odds": "-174",
+      "decimal_odds": 1.574712644,
+      "probability": 0.664,
+      "ev": 0.045,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Nick Suzuki",
+      "team": "MTL",
+      "opp": "COL",
+      "market": "3+ SOG",
+      "american_odds": "146",
+      "decimal_odds": 2.46,
+      "probability": 0.42100000000000004,
+      "ev": 0.036000000000000004,
+      "game_id": "2026020315",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Luke Evangelista",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "2+ SOG",
+      "american_odds": "-164",
+      "decimal_odds": 1.609756098,
+      "probability": 0.636,
+      "ev": 0.024,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE"
+    },
+    {
+      "model": "B",
+      "player": "Dougie Hamilton",
+      "team": "NJD",
+      "opp": "WSH",
+      "market": "2+ SOG",
+      "american_odds": "-184",
+      "decimal_odds": 1.543478261,
+      "probability": 0.657,
+      "ev": 0.013000000000000001,
+      "game_id": "2026020318",
+      "status": "ELIGIBLE"
+    },
     {
       "model": "C",
       "player": "Nick Suzuki",
@@ -96,7 +226,7 @@
     },
     {
       "model": "C",
-      "player": "Tim St\u00fctzle",
+      "player": "Tim Stützle",
       "team": "OTT",
       "opp": "PIT",
       "market": "3+ SOG",
@@ -212,7 +342,7 @@
       "status": "ELIGIBLE"
     }
   ],
-  "model_b_count": 0,
+  "model_b_count": 10,
   "model_c_count": 16,
   "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
