@@ -128,7 +128,11 @@ def model_c(book, today):
     dedup={}
     for leg in out:
         key=(leg["model"],leg["player"],leg["team"],leg["opp"],leg["market"],leg["game_id"])
-        if key not in dedup: dedup[key]=leg
+        # Prefer the most recently captured verified quote, not the
+        # largest EV. Earlier rows can represent superseded prices.
+        previous = dedup.get(key)
+        if previous is None or leg["odds_captured_at_utc"] > previous["odds_captured_at_utc"]:
+            dedup[key] = leg
     return list(dedup.values())
 
 def verify_roster_and_add_photos(legs):
