@@ -100,13 +100,16 @@ def model_c(book, today):
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
         if sheet_slate_date(fv("game_date")) == today: known.add((fv("player"),fv("team"),fv("opp"),fv("game_id") if "game_id" in fheaders else None))
     out=[]
+    diagnostics = {"forecast_match":0,"side_book_line":0,"forecast_age":0,"quote_and_game_time":0,"price_ev":0}
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
         if (v("player"),v("team"),v("opp"),v("game_id") if "game_id" in fheaders else None) not in known: continue
+        diagnostics["forecast_match"] += 1
         if v("side")!="OVER" or v("book").lower()!="fanduel": continue
         line=number(v("line"))
         # Sportsbook total 1.5 corresponds to 2+; total 2.5 to 3+.
         if line not in (1.5,2.5): continue
+        diagnostics["side_book_line"] += 1
         # A forecast can be generated the evening before its game. Its
         # timestamp is NOT the slate date; the verified game start below
         # determines the Toronto slate date. Still reject stale/future runs.
@@ -120,6 +123,7 @@ def model_c(book, today):
                 continue
         except (ValueError, TypeError, AttributeError):
             continue
+        diagnostics["forecast_age"] += 1
         # Publication time is not quote time. Fail closed until upstream
         # supplies both a verified game start and actual odds capture time.
         # This prevents recycling old pregame prices as live research.
@@ -138,11 +142,13 @@ def model_c(book, today):
             if now - captured > dt.timedelta(hours=4): continue
             if game_start - captured > dt.timedelta(days=2): continue
         except (ValueError, TypeError, AttributeError): continue
+        diagnostics["quote_and_game_time"] += 1
         prob,ev,decimal=number(v("model_probability")),number(v("estimated_ev")),number(v("decimal_odds"))
         if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
         # Reject mismatched or malformed price/probability/EV combinations.
         if abs((prob * decimal - 1) - ev) > 0.015: continue
         if not american_matches_decimal(v("american_odds"), decimal): continue
+        diagnostics["price_ev"] += 1
         out.append(dict(model="C",player=v("player"),team=v("team"),opp=v("opp"),
                         market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
                         decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
@@ -159,6 +165,7 @@ def model_c(book, today):
         previous = dedup.get(key)
         if previous is None or leg["odds_captured_at_utc"] > previous["odds_captured_at_utc"]:
             dedup[key] = leg
+    print(f"Model C gate counts: forecast_rows={max(0,len(forecasts)-1)}, paper_rows={max(0,len(picks)-1)}, today_forecast_keys={len(known)}, stages={diagnostics}, deduplicated={len(dedup)}")
     return list(dedup.values())
 
 def verify_roster_and_add_photos(legs):
