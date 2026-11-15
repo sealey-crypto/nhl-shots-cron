@@ -25,6 +25,20 @@ def percent(value):
     n = number(value)
     return n / 100 if n is not None and "%" in str(value) else n
 
+def american_matches_decimal(american, decimal):
+    """Reject missing, malformed or contradictory sportsbook price pairs."""
+    try:
+        raw = str(american).strip().replace(",", "")
+        if not raw or "." in raw:
+            return False
+        price = int(raw)
+        if -100 < price < 100:
+            return False
+        expected = 1 + (price / 100 if price > 0 else 100 / abs(price))
+        return abs(expected - decimal) <= 0.012
+    except (ValueError, TypeError, ZeroDivisionError):
+        return False
+
 def read(book, title):
     try: return book.worksheet(title).get_all_values()
     except gspread.WorksheetNotFound: return []
@@ -55,6 +69,7 @@ def model_b(book, today):
             continue
         # Fail closed on inconsistent source odds/probability/EV.
         if abs((probability * decimal - 1) - edge) > 0.015: continue
+        if not american_matches_decimal(american, decimal): continue
         out.append(dict(model="B",player=player,team=team,opp=opp,market=market,
                         american_odds=american,decimal_odds=decimal,probability=probability,
                         ev=edge,game_id=str(game),game_start_utc=game_start.astimezone(dt.timezone.utc).isoformat(),status="ELIGIBLE"))
@@ -117,6 +132,7 @@ def model_c(book, today):
         if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
         # Reject mismatched or malformed price/probability/EV combinations.
         if abs((prob * decimal - 1) - ev) > 0.015: continue
+        if not american_matches_decimal(v("american_odds"), decimal): continue
         out.append(dict(model="C",player=v("player"),team=v("team"),opp=v("opp"),
                         market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
                         decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
