@@ -59,7 +59,7 @@ def model_c(book, today):
     known = set()
     for r in forecasts[1:]:
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
-        if fv("game_date") in (today, (dt.date.fromisoformat(today)+dt.timedelta(days=1)).isoformat()): known.add((fv("player"),fv("team"),fv("opp")))
+        if fv("game_date") == today: known.add((fv("player"),fv("team"),fv("opp")))
     out=[]
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
