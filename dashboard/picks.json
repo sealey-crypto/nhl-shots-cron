@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-14",
-  "generated_at_utc": "2026-11-14T22:25:35.524393+00:00",
+  "generated_at_utc": "2026-11-15T03:23:03.069787+00:00",
   "legs": [
     {
       "model": "B",
@@ -215,20 +215,6 @@
     },
     {
       "model": "C",
-      "player": "Brock Boeser",
-      "team": "VAN",
-      "opp": "VGK",
-      "market": "2+ SOG",
-      "american_odds": "-130.0",
-      "decimal_odds": 1.7692307692307692,
-      "probability": 0.6058,
-      "ev": 0.0717,
-      "game_id": "2026020329",
-      "status": "ELIGIBLE",
-      "player_id": "8478444"
-    },
-    {
-      "model": "C",
       "player": "Joel Farabee",
       "team": "CGY",
       "opp": "LAK",
@@ -369,6 +355,6 @@
     }
   ],
   "model_b_count": 10,
-  "model_c_count": 16,
+  "model_c_count": 15,
   "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
