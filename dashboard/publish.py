@@ -31,7 +31,9 @@ def read(book, title):
 
 def model_b(book, today):
     rows = read(book, "Model B Auto Parlays")
-    if len(rows) < 11 or len(rows[1]) < 2 or rows[1][1] != today: return []
+    if len(rows) < 11 or len(rows[1]) < 2 or rows[1][1] != today:
+        print(f"Model B source gate: rows={len(rows)}, source_date={rows[1][1] if len(rows)>1 and len(rows[1])>1 else 'missing'}, slate={today}")
+        return []
     out = []
     for cells in rows[10:]:
         cells += [""] * max(0, 15-len(cells))
@@ -61,7 +63,9 @@ def model_b(book, today):
 def model_c(book, today):
     forecasts = read(book, "Daily Forecasts")
     picks = read(book, "Paper Picks")
-    if len(forecasts) < 2 or len(picks) < 2: return []
+    if len(forecasts) < 2 or len(picks) < 2:
+        print(f"Model C source gate: forecasts={max(0,len(forecasts)-1)}, paper_picks={max(0,len(picks)-1)}")
+        return []
     fheaders = {k:i for i,k in enumerate(forecasts[0])}
     pheaders = {k:i for i,k in enumerate(picks[0])}
     if not {"game_date","player","team","opp"}.issubset(fheaders): return []
@@ -169,7 +173,9 @@ def main():
     today=dt.datetime.now(ZONE).date().isoformat()
     b=model_b(client.open_by_key(os.environ["MODEL_B_SHEET_ID"]),today)
     c=model_c(client.open_by_key(os.environ["MODEL_C_SHEET_ID"]),today)
+    print(f"Pre-roster qualified: Model B={len(b)} Model C={len(c)}")
     legs=verify_roster_and_add_photos(b+c)
+    print(f"Post-roster qualified: total={len(legs)}")
     b=[x for x in legs if x['model']=='B']
     c=[x for x in legs if x['model']=='C']
     payload=dict(schema_version=1,snapshot_date=today,
