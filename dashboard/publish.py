@@ -69,11 +69,11 @@ def model_c(book, today):
     known = set()
     for r in forecasts[1:]:
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
-        if fv("game_date") == today: known.add((fv("player"),fv("team"),fv("opp")))
+        if fv("game_date") == today: known.add((fv("player"),fv("team"),fv("opp"),fv("game_id") if "game_id" in fheaders else None))
     out=[]
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
-        if (v("player"),v("team"),v("opp")) not in known: continue
+        if (v("player"),v("team"),v("opp"),v("game_id") if "game_id" in fheaders else None) not in known: continue
         if v("side")!="OVER" or v("book").lower()!="fanduel": continue
         line=number(v("line"))
         # Sportsbook total 1.5 corresponds to 2+; total 2.5 to 3+.
