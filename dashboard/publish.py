@@ -43,9 +43,19 @@ def read(book, title):
     try: return book.worksheet(title).get_all_values()
     except gspread.WorksheetNotFound: return []
 
+def sheet_slate_date(value):
+    """Normalize only unambiguous Sheets date representations to ISO day."""
+    raw = str(value).strip()
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%m/%d/%Y %H:%M:%S"):
+        try:
+            return dt.datetime.strptime(raw, fmt).date().isoformat()
+        except ValueError:
+            pass
+    return None
+
 def model_b(book, today):
     rows = read(book, "Model B Auto Parlays")
-    if len(rows) < 11 or len(rows[1]) < 2 or rows[1][1] != today:
+    if len(rows) < 11 or len(rows[1]) < 2 or sheet_slate_date(rows[1][1]) != today:
         print(f"Model B source gate: rows={len(rows)}, source_date={rows[1][1] if len(rows)>1 and len(rows[1])>1 else 'missing'}, slate={today}")
         return []
     out = []
@@ -88,7 +98,7 @@ def model_c(book, today):
     known = set()
     for r in forecasts[1:]:
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
-        if fv("game_date") == today: known.add((fv("player"),fv("team"),fv("opp"),fv("game_id") if "game_id" in fheaders else None))
+        if sheet_slate_date(fv("game_date")) == today: known.add((fv("player"),fv("team"),fv("opp"),fv("game_id") if "game_id" in fheaders else None))
     out=[]
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
