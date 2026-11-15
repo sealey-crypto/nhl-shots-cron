@@ -94,6 +94,9 @@ def model_c(book, today):
             now = dt.datetime.now(dt.timezone.utc)
             if not game_start.tzinfo or not captured.tzinfo: continue
             if not (captured <= now < game_start): continue
+            # The slate date must be the actual NHL game date in Toronto,
+            # not merely the forecast date or UTC calendar date.
+            if game_start.astimezone(ZONE).date().isoformat() != today: continue
             if now - captured > dt.timedelta(hours=4): continue
             if game_start - captured > dt.timedelta(days=2): continue
         except (ValueError, TypeError, AttributeError): continue
