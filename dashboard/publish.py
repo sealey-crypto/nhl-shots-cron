@@ -101,6 +101,7 @@ def model_c(book, today):
         if sheet_slate_date(fv("game_date")) == today: known.add((fv("player"),fv("team"),fv("opp"),fv("game_id") if "game_id" in fheaders else None))
     out=[]
     diagnostics = {"forecast_match":0,"side_book_line":0,"forecast_age":0,"quote_and_game_time":0,"price_ev":0}
+    time_rejections = {"missing_columns":0,"invalid_timestamps":0,"future_quote_or_started_game":0,"wrong_local_slate":0,"stale_quote":0,"quote_too_early":0}
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
         if (v("player"),v("team"),v("opp"),v("game_id") if "game_id" in fheaders else None) not in known: continue
@@ -129,19 +130,33 @@ def model_c(book, today):
         # This prevents recycling old pregame prices as live research.
         start_col = next((k for k in ("game_start_utc", "start_time_utc", "game_start") if k in pheaders), None)
         quote_col = next((k for k in ("odds_captured_at_utc", "quote_captured_at_utc", "odds_snapshot_utc") if k in pheaders), None)
-        if not start_col or not quote_col: continue
+        if not start_col or not quote_col:
+            time_rejections["missing_columns"] += 1
+            continue
         try:
             game_start = dt.datetime.fromisoformat(v(start_col).replace("Z", "+00:00"))
             captured = dt.datetime.fromisoformat(v(quote_col).replace("Z", "+00:00"))
             now = dt.datetime.now(dt.timezone.utc)
-            if not game_start.tzinfo or not captured.tzinfo: continue
-            if not (captured <= now < game_start): continue
+            if not game_start.tzinfo or not captured.tzinfo:
+                time_rejections["invalid_timestamps"] += 1
+                continue
+            if not (captured <= now < game_start):
+                time_rejections["future_quote_or_started_game"] += 1
+                continue
             # The slate date must be the actual NHL game date in Toronto,
             # not merely the forecast date or UTC calendar date.
-            if game_start.astimezone(ZONE).date().isoformat() != today: continue
-            if now - captured > dt.timedelta(hours=4): continue
-            if game_start - captured > dt.timedelta(days=2): continue
-        except (ValueError, TypeError, AttributeError): continue
+            if game_start.astimezone(ZONE).date().isoformat() != today:
+                time_rejections["wrong_local_slate"] += 1
+                continue
+            if now - captured > dt.timedelta(hours=4):
+                time_rejections["stale_quote"] += 1
+                continue
+            if game_start - captured > dt.timedelta(days=2):
+                time_rejections["quote_too_early"] += 1
+                continue
+        except (ValueError, TypeError, AttributeError):
+            time_rejections["invalid_timestamps"] += 1
+            continue
         diagnostics["quote_and_game_time"] += 1
         prob,ev,decimal=number(v("model_probability")),number(v("estimated_ev")),number(v("decimal_odds"))
         if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
@@ -165,7 +180,7 @@ def model_c(book, today):
         previous = dedup.get(key)
         if previous is None or leg["odds_captured_at_utc"] > previous["odds_captured_at_utc"]:
             dedup[key] = leg
-    print(f"Model C gate counts: forecast_rows={max(0,len(forecasts)-1)}, paper_rows={max(0,len(picks)-1)}, today_forecast_keys={len(known)}, stages={diagnostics}, deduplicated={len(dedup)}")
+    print(f"Model C gate counts: forecast_rows={max(0,len(forecasts)-1)}, paper_rows={max(0,len(picks)-1)}, today_forecast_keys={len(known)}, stages={diagnostics}, time_rejections={time_rejections}, deduplicated={len(dedup)}")
     return list(dedup.values())
 
 def verify_roster_and_add_photos(legs):
