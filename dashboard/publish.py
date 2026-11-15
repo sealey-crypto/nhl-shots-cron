@@ -82,6 +82,21 @@ def model_c(book, today):
         try: stamp_date=dt.datetime.fromisoformat(stamp.replace("Z","+00:00")).astimezone(ZONE).date().isoformat()
         except ValueError: continue
         if stamp_date != today: continue
+        # Publication time is not quote time. Fail closed until upstream
+        # supplies both a verified game start and actual odds capture time.
+        # This prevents recycling old pregame prices as live research.
+        start_col = next((k for k in ("game_start_utc", "start_time_utc", "game_start") if k in pheaders), None)
+        quote_col = next((k for k in ("odds_captured_at_utc", "quote_captured_at_utc", "odds_snapshot_utc") if k in pheaders), None)
+        if not start_col or not quote_col: continue
+        try:
+            game_start = dt.datetime.fromisoformat(v(start_col).replace("Z", "+00:00"))
+            captured = dt.datetime.fromisoformat(v(quote_col).replace("Z", "+00:00"))
+            now = dt.datetime.now(dt.timezone.utc)
+            if not game_start.tzinfo or not captured.tzinfo: continue
+            if not (captured <= now < game_start): continue
+            if now - captured > dt.timedelta(hours=4): continue
+            if game_start - captured > dt.timedelta(days=2): continue
+        except (ValueError, TypeError, AttributeError): continue
         prob,ev,decimal=number(v("model_probability")),number(v("estimated_ev")),number(v("decimal_odds"))
         if prob is None or ev is None or decimal is None or not 0<prob<1 or ev<=0 or decimal<=1:continue
         # Reject mismatched or malformed price/probability/EV combinations.
