@@ -55,7 +55,7 @@ def model_b(book, today):
         if abs((probability * decimal - 1) - edge) > 0.015: continue
         out.append(dict(model="B",player=player,team=team,opp=opp,market=market,
                         american_odds=american,decimal_odds=decimal,probability=probability,
-                        ev=edge,game_id=str(game),status="ELIGIBLE"))
+                        ev=edge,game_id=str(game),game_start_utc=game_start.astimezone(dt.timezone.utc).isoformat(),status="ELIGIBLE"))
     return out
 
 def model_c(book, today):
@@ -104,6 +104,8 @@ def model_c(book, today):
         out.append(dict(model="C",player=v("player"),team=v("team"),opp=v("opp"),
                         market=f"{int(line+.5)}+ SOG",american_odds=v("american_odds"),
                         decimal_odds=decimal,probability=prob,ev=ev,game_id=str(v("game_id")),
+                        game_start_utc=game_start.astimezone(dt.timezone.utc).isoformat(),
+                        odds_captured_at_utc=captured.astimezone(dt.timezone.utc).isoformat(),
                         status="ELIGIBLE"))
     # Keep one record per player/market/game; do not maximize EV across reruns,
     # since that would cherry-pick potentially stale historical quotes.
