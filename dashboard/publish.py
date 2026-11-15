@@ -29,9 +29,14 @@ def american_matches_decimal(american, decimal):
     """Reject missing, malformed or contradictory sportsbook price pairs."""
     try:
         raw = str(american).strip().replace(",", "")
-        if not raw or "." in raw:
+        if not raw:
             return False
-        price = int(raw)
+        # Sheets serializes integer American prices as 105.0 / -135.0.
+        # Accept only exactly integral numeric representations.
+        numeric = float(raw)
+        if not numeric.is_integer():
+            return False
+        price = int(numeric)
         if -100 < price < 100:
             return False
         expected = 1 + (price / 100 if price > 0 else 100 / abs(price))
