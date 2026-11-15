@@ -78,10 +78,19 @@ def model_c(book, today):
         line=number(v("line"))
         # Sportsbook total 1.5 corresponds to 2+; total 2.5 to 3+.
         if line not in (1.5,2.5): continue
+        # A forecast can be generated the evening before its game. Its
+        # timestamp is NOT the slate date; the verified game start below
+        # determines the Toronto slate date. Still reject stale/future runs.
         stamp=v("forecast_utc")
-        try: stamp_date=dt.datetime.fromisoformat(stamp.replace("Z","+00:00")).astimezone(ZONE).date().isoformat()
-        except ValueError: continue
-        if stamp_date != today: continue
+        try:
+            forecast_time = dt.datetime.fromisoformat(stamp.replace("Z", "+00:00"))
+            now_utc = dt.datetime.now(dt.timezone.utc)
+            if forecast_time.tzinfo is None or not (
+                dt.timedelta(0) <= now_utc - forecast_time <= dt.timedelta(hours=36)
+            ):
+                continue
+        except (ValueError, TypeError, AttributeError):
+            continue
         # Publication time is not quote time. Fail closed until upstream
         # supplies both a verified game start and actual odds capture time.
         # This prevents recycling old pregame prices as live research.
