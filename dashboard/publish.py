@@ -43,6 +43,16 @@ def model_b(book, today):
         try: game_day = dt.datetime.fromisoformat(start.replace("Z","+00:00")).astimezone(ZONE).date().isoformat()
         except ValueError: continue
         if game_day != today or edge <= 0 or not 0 < probability < 1 or decimal <= 1: continue
+        # A newly published snapshot must not revive an already-started game's
+        # pregame quote. The source start field is an ISO timestamp with offset.
+        try:
+            game_start = dt.datetime.fromisoformat(start.replace("Z", "+00:00"))
+            if game_start.tzinfo is None or game_start <= dt.datetime.now(dt.timezone.utc):
+                continue
+        except (ValueError, TypeError):
+            continue
+        # Fail closed on inconsistent source odds/probability/EV.
+        if abs((probability * decimal - 1) - edge) > 0.015: continue
         out.append(dict(model="B",player=player,team=team,opp=opp,market=market,
                         american_odds=american,decimal_odds=decimal,probability=probability,
                         ev=edge,game_id=str(game),status="ELIGIBLE"))
