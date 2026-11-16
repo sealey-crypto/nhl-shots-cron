@@ -103,7 +103,10 @@ def model_c(book, today):
     known = set()
     for r in forecasts[1:]:
         def fv(k): return r[fheaders[k]] if len(r)>fheaders[k] else ""
-        # NHL game_date is often the UTC date (e.g. 2026-11-16 for a\n        # 2026-11-15 evening Toronto game). Join by verified game ID;\n        # the authoritative local slate gate is game_start_utc below.\n        if fv("game_id") and fv("player") and fv("team") and fv("opp"): known.add((fv("player"),fv("team"),fv("opp"),fv("game_id")))
+        # NHL game_date is often the UTC date (e.g. 2026-11-16 for a
+        # 2026-11-15 evening Toronto game). Join by verified game ID;
+        # the authoritative local slate gate is game_start_utc below.
+        if fv("game_id") and fv("player") and fv("team") and fv("opp"): known.add((fv("player"),fv("team"),fv("opp"),fv("game_id")))
     out=[]
     diagnostics = {"forecast_match":0,"side_book_line":0,"forecast_age":0,"quote_and_game_time":0,"price_ev":0}
     time_rejections = {"missing_columns":0,"invalid_timestamps":0,"future_quote_or_started_game":0,"wrong_local_slate":0,"stale_quote":0,"quote_too_early":0}
