@@ -1,9 +1,42 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-16",
-  "generated_at_utc": "2026-11-16T09:45:00.745538+00:00",
-  "legs": [],
+  "generated_at_utc": "2026-11-16T23:38:07.380973+00:00",
+  "legs": [
+    {
+      "model": "C",
+      "player": "J.T. Miller",
+      "team": "NYR",
+      "opp": "MTL",
+      "market": "2+ SOG",
+      "american_odds": "-140.0",
+      "decimal_odds": 1.7142857142857144,
+      "probability": 0.6151,
+      "ev": 0.0544,
+      "game_id": "2026020331",
+      "game_start_utc": "2026-11-17T00:30:00+00:00",
+      "odds_captured_at_utc": "2026-11-16T22:00:00+00:00",
+      "status": "ELIGIBLE",
+      "player_id": "8476468"
+    },
+    {
+      "model": "C",
+      "player": "Jake DeBrusk",
+      "team": "VAN",
+      "opp": "UTA",
+      "market": "2+ SOG",
+      "american_odds": "-196.0",
+      "decimal_odds": 1.510204081632653,
+      "probability": 0.6962,
+      "ev": 0.0514,
+      "game_id": "2026020332",
+      "game_start_utc": "2026-11-17T02:30:00+00:00",
+      "odds_captured_at_utc": "2026-11-16T22:00:00+00:00",
+      "status": "ELIGIBLE",
+      "player_id": "8478498"
+    }
+  ],
   "model_b_count": 0,
-  "model_c_count": 0,
+  "model_c_count": 2,
   "note": "Research only; model EV is unvalidated. No combined parlay prices implied."
 }
