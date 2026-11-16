@@ -98,7 +98,9 @@ def model_c(book, today):
         return []
     fheaders = {k:i for i,k in enumerate(forecasts[0])}
     pheaders = {k:i for i,k in enumerate(picks[0])}
-    if not {"game_date","player","team","opp"}.issubset(fheaders): return []
+    if not {"game_date","game_id","player","team","opp"}.issubset(fheaders):
+        print(f"Model C missing forecast columns: {sorted({'game_date','game_id','player','team','opp'} - set(fheaders))}")
+        return []
     if not {"forecast_utc","player","team","opp","line","side","book","american_odds","decimal_odds","model_probability","estimated_ev","game_id"}.issubset(pheaders): return []
     known = set()
     for r in forecasts[1:]:
@@ -112,7 +114,7 @@ def model_c(book, today):
     time_rejections = {"missing_columns":0,"invalid_timestamps":0,"future_quote_or_started_game":0,"wrong_local_slate":0,"stale_quote":0,"quote_too_early":0}
     for r in picks[1:]:
         def v(k): return r[pheaders[k]] if len(r)>pheaders[k] else ""
-        if (v("player"),v("team"),v("opp"),v("game_id") if "game_id" in fheaders else None) not in known: continue
+        if (v("player"),v("team"),v("opp"),v("game_id")) not in known: continue
         diagnostics["forecast_match"] += 1
         if v("side")!="OVER" or v("book").lower()!="fanduel": continue
         line=number(v("line"))
