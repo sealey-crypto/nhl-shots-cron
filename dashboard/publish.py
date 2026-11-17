@@ -278,6 +278,38 @@ def verify_roster_and_add_photos(legs):
         verified.append(leg)
     return verified
 
+def publish_snapshot(payload, headers):
+    """Refresh the file revision after a concurrent update, with bounded retries."""
+    content = base64.b64encode(
+        (json.dumps(payload, indent=2) + "\n").encode()
+    ).decode()
+    for attempt in range(3):
+        existing = requests.get(API, headers=headers, params={"ref": "main"}, timeout=30)
+        existing.raise_for_status()
+        current = existing.json()
+        # Keep a newer generated snapshot if another publisher finished first.
+        prior = json.loads(base64.b64decode(current["content"]))
+        previous_time = prior.get("generated_at_utc")
+        if previous_time:
+            previous_time = dt.datetime.fromisoformat(previous_time.replace("Z", "+00:00"))
+            candidate_time = dt.datetime.fromisoformat(
+                payload["generated_at_utc"].replace("Z", "+00:00")
+            )
+            if previous_time.tzinfo is None:
+                raise ValueError("Existing dashboard timestamp has no timezone")
+            if previous_time > candidate_time:
+                print("Kept a newer dashboard snapshot published by another run")
+                return False
+        result = requests.put(API, headers=headers, timeout=30, json={
+            "message": f"Publish sanitized NHL research snapshot {payload['snapshot_date']}",
+            "content": content, "sha": current["sha"], "branch": "main",
+        })
+        if result.status_code == 409 and attempt < 2:
+            continue
+        result.raise_for_status()
+        return True
+
+
 def main():
     creds = Credentials.from_service_account_info(json.loads(os.environ["GOOGLE_CREDENTIALS_JSON"]),
                  scopes=["https://www.googleapis.com/auth/spreadsheets.readonly"])
@@ -299,12 +331,7 @@ def main():
         note="Research only; model EV is unvalidated. No combined parlay prices implied.")
     token=os.environ["GH_PUBLISH_TOKEN"]
     headers={"Authorization":f"Bearer {token}","Accept":"application/vnd.github+json"}
-    existing=requests.get(API,headers=headers,timeout=30)
-    existing.raise_for_status()
-    content=base64.b64encode((json.dumps(payload,indent=2)+"\n").encode()).decode()
-    result=requests.put(API,headers=headers,timeout=30,json={
-        "message":f"Publish sanitized NHL research snapshot {today}",
-        "content":content,"sha":existing.json()["sha"],"branch":"main"})
-    result.raise_for_status()
+    if not publish_snapshot(payload, headers):
+        return
     print(f"Published snapshot {today}: Model B={len(b)} Model C={len(c)} Forecast watchlist={len(watchlist)}")
 if __name__=="__main__": main()
