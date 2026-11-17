@@ -193,6 +193,56 @@ def model_c(book, today):
     print(f"Model C gate counts: forecast_rows={max(0,len(forecasts)-1)}, paper_rows={max(0,len(picks)-1)}, today_forecast_keys={len(known)}, stages={diagnostics}, time_rejections={time_rejections}, deduplicated={len(dedup)}")
     return list(dedup.values())
 
+
+def model_c_watchlist(book, today, now=None):
+    """Latest same-day Model C forecasts; no sportsbook prices or EV claims.
+
+    This is a forecast-only snapshot, not a bet recommendation. Limit the
+    published fields and ignore nonfinite/out-of-range probabilities.
+    """
+    import math
+    now = now or dt.datetime.now(dt.timezone.utc)
+    rows = read(book, "Daily Forecasts")
+    if len(rows) < 2:
+        return []
+    headers = {k: i for i, k in enumerate(rows[0])}
+    required = {"game_date", "game_id", "player", "team", "opp", "forecast_utc",
+                "expected_sog", "probability_2plus", "probability_3plus",
+                "probability_4plus"}
+    if not required.issubset(headers):
+        print(f"Forecast watchlist missing columns: {sorted(required-set(headers))}")
+        return []
+    latest = {}
+    for row in rows[1:]:
+        def v(key):
+            return str(row[headers[key]]).strip() if len(row) > headers[key] else ""
+        if sheet_slate_date(v("game_date")) != today:
+            continue
+        if not all(v(k) for k in ("game_id", "player", "team", "opp")):
+            continue
+        try:
+            stamp = dt.datetime.fromisoformat(v("forecast_utc").replace("Z", "+00:00"))
+            if stamp.tzinfo is None or not dt.timedelta(0) <= now-stamp <= dt.timedelta(hours=36):
+                continue
+        except (ValueError, TypeError):
+            continue
+        nums = [number(v(k)) for k in ("expected_sog", "probability_2plus",
+                "probability_3plus", "probability_4plus")]
+        if any(n is None or not math.isfinite(n) for n in nums):
+            continue
+        shots, p2, p3, p4 = nums
+        if not (0 <= shots <= 15 and 0 <= p4 <= p3 <= p2 <= 1):
+            continue
+        item = dict(player=v("player"), team=v("team"), opp=v("opp"),
+                    game_id=v("game_id"), forecast_utc=stamp.astimezone(
+                        dt.timezone.utc).isoformat(), expected_sog=round(shots, 3),
+                    p2=round(p2, 5), p3=round(p3, 5), p4=round(p4, 5))
+        key = (item["game_id"], item["player"], item["team"])
+        old = latest.get(key)
+        if old is None or item["forecast_utc"] > old["forecast_utc"]:
+            latest[key] = item
+    return sorted(latest.values(), key=lambda x: (-x["expected_sog"], x["player"]))[:30]
+
 def verify_roster_and_add_photos(legs):
     """Verify current NHL team membership and attach official NHL headshot IDs.
     Fail closed on team mismatches; if NHL API is unavailable, omit unverified legs.
@@ -234,7 +284,9 @@ def main():
     client = gspread.authorize(creds)
     today=dt.datetime.now(ZONE).date().isoformat()
     b=model_b(client.open_by_key(os.environ["MODEL_B_SHEET_ID"]),today)
-    c=model_c(client.open_by_key(os.environ["MODEL_C_SHEET_ID"]),today)
+    c_book=client.open_by_key(os.environ["MODEL_C_SHEET_ID"])
+    watchlist=model_c_watchlist(c_book,today)
+    c=model_c(c_book,today)
     print(f"Pre-roster qualified: Model B={len(b)} Model C={len(c)}")
     legs=verify_roster_and_add_photos(b+c)
     print(f"Post-roster qualified: total={len(legs)}")
@@ -243,6 +295,7 @@ def main():
     payload=dict(schema_version=1,snapshot_date=today,
         generated_at_utc=dt.datetime.now(dt.timezone.utc).isoformat(),
         legs=legs,model_b_count=len(b),model_c_count=len(c),
+        model_c_watchlist=watchlist,forecast_count=len(watchlist),
         note="Research only; model EV is unvalidated. No combined parlay prices implied.")
     token=os.environ["GH_PUBLISH_TOKEN"]
     headers={"Authorization":f"Bearer {token}","Accept":"application/vnd.github+json"}
@@ -253,5 +306,5 @@ def main():
         "message":f"Publish sanitized NHL research snapshot {today}",
         "content":content,"sha":existing.json()["sha"],"branch":"main"})
     result.raise_for_status()
-    print(f"Published snapshot {today}: Model B={len(b)} Model C={len(c)}")
+    print(f"Published snapshot {today}: Model B={len(b)} Model C={len(c)} Forecast watchlist={len(watchlist)}")
 if __name__=="__main__": main()
