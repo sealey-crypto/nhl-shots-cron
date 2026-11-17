@@ -278,11 +278,55 @@ def verify_roster_and_add_photos(legs):
         verified.append(leg)
     return verified
 
+def retain_same_day_research(payload, prior):
+    """Keep previously published, validated daily rows for display only.
+
+    A published row is not a live price: the client determines freshness from
+    its original quote capture time. Never carry rows across local slate days.
+    """
+    if prior.get("snapshot_date") != payload["snapshot_date"]:
+        return payload
+    day = payload["snapshot_date"]
+    merged = {}
+    def candidate(leg):
+        if not isinstance(leg, dict) or leg.get("model") not in ("B", "C"):
+            return False
+        if leg.get("status") != "ELIGIBLE" or not all(leg.get(k) for k in ("player", "game_id", "market", "game_start_utc")):
+            return False
+        if leg.get("market") not in ("2+ SOG", "3+ SOG"):
+            return False
+        try:
+            start = dt.datetime.fromisoformat(str(leg["game_start_utc"]).replace("Z", "+00:00"))
+            if start.tzinfo is None or start.astimezone(ZONE).date().isoformat() != day:
+                return False
+            if leg["model"] == "C":
+                quote = dt.datetime.fromisoformat(str(leg["odds_captured_at_utc"]).replace("Z", "+00:00"))
+                if quote.tzinfo is None or quote > dt.datetime.now(dt.timezone.utc):
+                    return False
+            p, ev, odds = (float(leg[k]) for k in ("probability", "ev", "decimal_odds"))
+            return 0 < p < 1 and odds > 1 and ev > 0 and abs(p * odds - 1 - ev) <= 0.015
+        except (KeyError, TypeError, ValueError, OverflowError):
+            return False
+    for source in (prior.get("legs", []), payload.get("legs", [])):
+        if not isinstance(source, list):
+            continue
+        for leg in source:
+            if not candidate(leg):
+                continue
+            key = (leg["model"], str(leg["game_id"]), str(leg["player"]).casefold(), leg["market"])
+            prev = merged.get(key)
+            if prev is None or str(leg.get("odds_captured_at_utc", "")) >= str(prev.get("odds_captured_at_utc", "")):
+                merged[key] = leg
+    # A bounded public history of already-screened daily selections.
+    payload = dict(payload)
+    payload["legs"] = list(merged.values())[:80]
+    payload["model_b_count"] = sum(l["model"] == "B" for l in payload["legs"])
+    payload["model_c_count"] = sum(l["model"] == "C" for l in payload["legs"])
+    return payload
+
+
 def publish_snapshot(payload, headers):
     """Refresh the file revision after a concurrent update, with bounded retries."""
-    content = base64.b64encode(
-        (json.dumps(payload, indent=2) + "\n").encode()
-    ).decode()
     for attempt in range(3):
         existing = requests.get(API, headers=headers, params={"ref": "main"}, timeout=30)
         existing.raise_for_status()
@@ -300,6 +344,10 @@ def publish_snapshot(payload, headers):
             if previous_time > candidate_time:
                 print("Kept a newer dashboard snapshot published by another run")
                 return False
+        revised = retain_same_day_research(payload, prior)
+        content = base64.b64encode(
+            (json.dumps(revised, indent=2) + "\n").encode()
+        ).decode()
         result = requests.put(API, headers=headers, timeout=30, json={
             "message": f"Publish sanitized NHL research snapshot {payload['snapshot_date']}",
             "content": content, "sha": current["sha"], "branch": "main",
