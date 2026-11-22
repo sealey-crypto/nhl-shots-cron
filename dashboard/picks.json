@@ -1,98 +1,98 @@
 {
   "schema_version": 1,
   "snapshot_date": "2026-11-22",
-  "generated_at_utc": "2026-11-22T10:20:26.913861+00:00",
+  "generated_at_utc": "2026-11-22T21:46:13.978079+00:00",
   "legs": [],
   "model_b_count": 0,
   "model_c_count": 0,
   "model_c_watchlist": [
     {
-      "player": "Jason Robertson",
-      "team": "DAL",
-      "opp": "PIT",
-      "game_id": "2026020376",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.443,
-      "p2": 0.8357,
-      "p3": 0.6467,
-      "p4": 0.4432
-    },
-    {
       "player": "Leon Draisaitl",
       "team": "EDM",
       "opp": "STL",
       "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.429,
-      "p2": 0.8341,
-      "p3": 0.6442,
-      "p4": 0.4405
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.712,
+      "p2": 0.8583,
+      "p3": 0.6872,
+      "p4": 0.4933
+    },
+    {
+      "player": "Jason Robertson",
+      "team": "DAL",
+      "opp": "PIT",
+      "game_id": "2026020376",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.432,
+      "p2": 0.83,
+      "p3": 0.6406,
+      "p4": 0.4395
     },
     {
       "player": "Brandon Hagel",
       "team": "TBL",
       "opp": "BUF",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.353,
-      "p2": 0.8254,
-      "p3": 0.6304,
-      "p4": 0.4251
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.352,
+      "p2": 0.821,
+      "p3": 0.6264,
+      "p4": 0.4238
     },
     {
       "player": "Nikita Kucherov",
       "team": "TBL",
       "opp": "BUF",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.285,
-      "p2": 0.8174,
-      "p3": 0.6178,
-      "p4": 0.4114
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.269,
+      "p2": 0.8111,
+      "p3": 0.611,
+      "p4": 0.4071
     },
     {
       "player": "Tage Thompson",
       "team": "BUF",
       "opp": "TBL",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.194,
-      "p2": 0.806,
-      "p3": 0.6003,
-      "p4": 0.3927
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.167,
+      "p2": 0.7982,
+      "p3": 0.5916,
+      "p4": 0.3865
     },
     {
       "player": "Connor McDavid",
       "team": "EDM",
       "opp": "STL",
       "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.163,
-      "p2": 0.8019,
-      "p3": 0.5942,
-      "p4": 0.3862
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 3.161,
+      "p2": 0.7975,
+      "p3": 0.5905,
+      "p4": 0.3853
     },
     {
       "player": "Jake Guentzel",
       "team": "TBL",
       "opp": "BUF",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 3.015,
-      "p2": 0.7816,
-      "p3": 0.5642,
-      "p4": 0.3555
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.99,
+      "p2": 0.7738,
+      "p3": 0.5561,
+      "p4": 0.3502
     },
     {
       "player": "Connor Bedard",
       "team": "CHI",
       "opp": "VAN",
       "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.903,
-      "p2": 0.7649,
-      "p3": 0.5406,
-      "p4": 0.3322
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.842,
+      "p2": 0.7513,
+      "p3": 0.5249,
+      "p4": 0.3197
     },
     {
       "player": "Sebastian Aho",
@@ -110,22 +110,11 @@
       "team": "VAN",
       "opp": "CHI",
       "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.692,
-      "p2": 0.73,
-      "p3": 0.4936,
-      "p4": 0.2879
-    },
-    {
-      "player": "Jack Quinn",
-      "team": "BUF",
-      "opp": "TBL",
-      "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.667,
-      "p2": 0.7256,
-      "p3": 0.4878,
-      "p4": 0.2827
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.694,
+      "p2": 0.7266,
+      "p3": 0.4921,
+      "p4": 0.2891
     },
     {
       "player": "Andrei Svechnikov",
@@ -137,6 +126,28 @@
       "p2": 0.7209,
       "p3": 0.4818,
       "p4": 0.2773
+    },
+    {
+      "player": "Jack Quinn",
+      "team": "BUF",
+      "opp": "TBL",
+      "game_id": "2026020374",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.612,
+      "p2": 0.7119,
+      "p3": 0.4732,
+      "p4": 0.2721
+    },
+    {
+      "player": "Evan Bouchard",
+      "team": "EDM",
+      "opp": "STL",
+      "game_id": "2026020375",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.582,
+      "p2": 0.7065,
+      "p3": 0.4664,
+      "p4": 0.266
     },
     {
       "player": "Jackson Blake",
@@ -154,11 +165,11 @@
       "team": "DAL",
       "opp": "PIT",
       "game_id": "2026020376",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.496,
-      "p2": 0.6936,
-      "p3": 0.4476,
-      "p4": 0.2475
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.497,
+      "p2": 0.6901,
+      "p3": 0.4463,
+      "p4": 0.2486
     },
     {
       "player": "Nikolaj Ehlers",
@@ -172,59 +183,48 @@
       "p4": 0.2448
     },
     {
-      "player": "Evan Bouchard",
-      "team": "EDM",
-      "opp": "STL",
-      "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.48,
-      "p2": 0.6903,
-      "p3": 0.4437,
-      "p4": 0.2441
-    },
-    {
-      "player": "Jimmy Snuggerud",
-      "team": "STL",
-      "opp": "EDM",
-      "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.449,
-      "p2": 0.6841,
-      "p3": 0.4362,
-      "p4": 0.2378
+      "player": "Frank Nazar",
+      "team": "CHI",
+      "opp": "VAN",
+      "game_id": "2026020377",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.477,
+      "p2": 0.6863,
+      "p3": 0.4416,
+      "p4": 0.2446
     },
     {
       "player": "Rickard Rakell",
       "team": "PIT",
       "opp": "DAL",
       "game_id": "2026020376",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.395,
-      "p2": 0.673,
-      "p3": 0.423,
-      "p4": 0.2269
-    },
-    {
-      "player": "Frank Nazar",
-      "team": "CHI",
-      "opp": "VAN",
-      "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.392,
-      "p2": 0.6724,
-      "p3": 0.4222,
-      "p4": 0.2263
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.45,
+      "p2": 0.6808,
+      "p3": 0.435,
+      "p4": 0.2391
     },
     {
       "player": "Zach Benson",
       "team": "BUF",
       "opp": "TBL",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.369,
-      "p2": 0.6675,
-      "p3": 0.4165,
-      "p4": 0.2216
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.403,
+      "p2": 0.6714,
+      "p3": 0.4238,
+      "p4": 0.2297
+    },
+    {
+      "player": "Jimmy Snuggerud",
+      "team": "STL",
+      "opp": "EDM",
+      "game_id": "2026020375",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.346,
+      "p2": 0.6595,
+      "p3": 0.41,
+      "p4": 0.2184
     },
     {
       "player": "Logan Stankoven",
@@ -249,70 +249,70 @@
       "p4": 0.2042
     },
     {
-      "player": "Dylan Holloway",
-      "team": "STL",
-      "opp": "EDM",
+      "player": "Vasily Podkolzin",
+      "team": "EDM",
+      "opp": "STL",
       "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.252,
-      "p2": 0.642,
-      "p3": 0.3875,
-      "p4": 0.1986
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.28,
+      "p2": 0.6452,
+      "p3": 0.3937,
+      "p4": 0.2054
     },
     {
       "player": "Brock Boeser",
       "team": "VAN",
       "opp": "CHI",
       "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.239,
-      "p2": 0.6389,
-      "p3": 0.3841,
-      "p4": 0.1959
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.246,
+      "p2": 0.6375,
+      "p3": 0.3852,
+      "p4": 0.1987
     },
     {
       "player": "Patrick Kane",
       "team": "CHI",
       "opp": "VAN",
       "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.182,
-      "p2": 0.6259,
-      "p3": 0.3698,
-      "p4": 0.1851
-    },
-    {
-      "player": "John Carlson",
-      "team": "TBL",
-      "opp": "BUF",
-      "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.167,
-      "p2": 0.6224,
-      "p3": 0.366,
-      "p4": 0.1822
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.207,
+      "p2": 0.6287,
+      "p3": 0.3755,
+      "p4": 0.1913
     },
     {
       "player": "Rasmus Dahlin",
       "team": "BUF",
       "opp": "TBL",
       "game_id": "2026020374",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.157,
-      "p2": 0.6201,
-      "p3": 0.3635,
-      "p4": 0.1803
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.191,
+      "p2": 0.625,
+      "p3": 0.3714,
+      "p4": 0.1881
     },
     {
-      "player": "Mason McTavish",
+      "player": "John Carlson",
+      "team": "TBL",
+      "opp": "BUF",
+      "game_id": "2026020374",
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.179,
+      "p2": 0.6223,
+      "p3": 0.3685,
+      "p4": 0.1859
+    },
+    {
+      "player": "Dylan Holloway",
       "team": "STL",
       "opp": "EDM",
       "game_id": "2026020375",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.144,
-      "p2": 0.6168,
-      "p3": 0.36,
-      "p4": 0.1777
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.172,
+      "p2": 0.6206,
+      "p3": 0.3667,
+      "p4": 0.1846
     },
     {
       "player": "Seth Jarvis",
@@ -330,11 +330,11 @@
       "team": "VAN",
       "opp": "CHI",
       "game_id": "2026020377",
-      "forecast_utc": "2026-11-21T22:10:00+00:00",
-      "expected_sog": 2.115,
-      "p2": 0.61,
-      "p3": 0.3528,
-      "p4": 0.1724
+      "forecast_utc": "2026-11-22T19:00:00+00:00",
+      "expected_sog": 2.126,
+      "p2": 0.6096,
+      "p3": 0.355,
+      "p4": 0.1758
     }
   ],
   "forecast_count": 30,
